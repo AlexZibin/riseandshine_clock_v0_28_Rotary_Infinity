@@ -788,37 +788,27 @@ void minimalClock(DateTime now) {
 void basicClock(DateTime now) {
   uint8_t hourPos = _hourPos (now.hour, now.minute);
 
-  leds[(hourPos+LEDOffset+59)%60].r = 255;
-  leds[(hourPos+LEDOffset+59)%60].g = 0;
-  leds[(hourPos+LEDOffset+59)%60].b = 0;  
-  leds[(hourPos+LEDOffset)%60].r = 255;
-  leds[(hourPos+LEDOffset)%60].g = 0;
-  leds[(hourPos+LEDOffset)%60].b = 0;
-  leds[(hourPos+LEDOffset+1)%60].r = 255;
-  leds[(hourPos+LEDOffset+1)%60].g = 0;
-  leds[(hourPos+LEDOffset+1)%60].b = 0;
+  // Hour (9 lines of code)
+          findLED(hourPos-1)->r = 30;
+          findLED(hourPos-1)->g =  0;
+          findLED(hourPos-1)->b =  0;
 
-   // Hour (9 lines of code)
-          findLED(hourPos-1)->r = 30
-          findLED(hourPos-1)->g =   0;
-          findLED(hourPos-1)->b =   0;
+          findLED(hourPos+1)->r = 30;
+          findLED(hourPos+1)->g =  0;
+          findLED(hourPos+1)->b =  0;
 
-          findLED(hourPos+1)->r = 30
-          findLED(hourPos+1)->g =   0;
-          findLED(hourPos+1)->b =   0;
-
-          findLED(hourPos)->r = 190
-          findLED(hourPos)->g = 0;
-          findLED(hourPos)->b = 0;
+          findLED(hourPos)->r  = 190;
+          findLED(hourPos)->g  =   0;
+          findLED(hourPos)->b  =   0;
   
   // Minute  
-          findLED(now.minute)->r = 0;
+          findLED(now.minute)->r =   0;
           findLED(now.minute)->g = 255;
-          findLED(now.minute)->b = 0;
+          findLED(now.minute)->b =   0;
     
   // Second  
-          findLED(now.second)->r = 0;
-          findLED(now.second)->g = 0;
+          findLED(now.second)->r =   0;
+          findLED(now.second)->g =   0;
           findLED(now.second)->b = 255;
 }
 
@@ -837,30 +827,31 @@ void smoothSecond(DateTime now)
   if (subSeconds < cyclesPerSec) {secondBrightness = 50.0*(1.0+sin((3.14*fracOfSec)-1.57));}
   if (subSeconds < cyclesPerSec) {secondBrightness2 = 50.0*(1.0+sin((3.14*fracOfSec)+1.57));}
 
-  uint8_t hourPos = _hourPos (now);
+  uint8_t hourPos = _hourPos (now.hour, now.minute);
   // The colours are set last, so if on same LED mixed colours are created
-  leds[(hourPos+LEDOffset+59)%60].r = 255;   
-  leds[(hourPos+LEDOffset)%60].r = 255;
-  leds[(hourPos+LEDOffset+1)%60].r = 255;
-  leds[(now.minute()+LEDOffset)%60].g = 255;
-  leds[(now.second()+LEDOffset)%60].b = secondBrightness;
-  leds[(now.second()+LEDOffset+59)%60].b = secondBrightness2;
+  // Hour (3 lines of code)
+          findLED(hourPos-1)->r = 30;
+          findLED(hourPos+1)->r = 30;
+          findLED(hourPos)->r  = 190;
+  
+  // Minute  
+          findLED(now.minute)->g = 255;
+    
+  // Second  
+          findLED(now.second())->b = secondBrightness;
+          findLED(now.second()+59)->b = secondBrightness2;
 }
 
 //
 void outlineClock(DateTime now)
 {
-  for (int i = 0; i < numLEDs; i++)
-    {
-      fiveMins = i%5;
-      if (fiveMins == 0)
-        {
-          leds[i].r = 100;
-          leds[i].g = 100;
-          leds[i].b = 100;
-        }
-    }
-  uint8_t hourPos = _hourPos (now);
+  for (int i = 0; i < numLEDs; i+= numLEDs/12) {
+      findLED(i)->r = 100;
+      findLED(i)->g = 100;
+      findLED(i)->b = 100;
+  }
+  uint8_t hourPos = _hourPos (now.hour, now.minute);
+
   leds[(hourPos+LEDOffset+59)%60].r = 255;   
   leds[(hourPos+LEDOffset)%60].r = 255;
   leds[(hourPos+LEDOffset+1)%60].r = 255;
@@ -880,16 +871,20 @@ void minimalMilliSec(DateTime now)
   // set hour, min & sec LEDs
   uint8_t hourPos = _hourPos (now);
   subSeconds = (((millis() - newSecTime)*60)/cyclesPerSec)%60;  // This divides by 733, but should be 1000 and not sure why???
+
   // Millisec lights are set first, so hour/min/sec lights override and don't flicker as millisec passes
-  leds[(subSeconds+LEDOffset)%60].r = 50;
-  leds[(subSeconds+LEDOffset)%60].g = 50;
-  leds[(subSeconds+LEDOffset)%60].b = 50;
+          findLED(subSeconds)->r = 50;
+          findLED(subSeconds)->g = 50;
+          findLED(subSeconds)->b = 50;
+
   // The colours are set last, so if on same LED mixed colours are created
-  leds[(hourPos+LEDOffset+59)%60].r = 255;   
-  leds[(hourPos+LEDOffset)%60].r = 255;
-  leds[(hourPos+LEDOffset+1)%60].r = 255;
-  leds[(now.minute()+LEDOffset)%60].g = 255;
-  leds[(now.second()+LEDOffset)%60].b = 255;
+  // Hour (3 lines of code)
+          findLED(hourPos-1)->r = 30;
+          findLED(hourPos+1)->r = 30;
+          findLED(hourPos)->r  = 190;
+  
+  // Minute  
+          findLED(now.minute)->g = 255;
 }
 
 // Pendulum will be at the bottom and left for one second and right for one second
@@ -904,21 +899,30 @@ void simplePendulum(DateTime now)
       if (swingBack == true) {swingBack = false;}
       else {swingBack = true;}
     } 
+    
   // set hour, min & sec LEDs
   fracOfSec = (millis() - newSecTime)/cyclesPerSecFloat;  // This divides by 733, but should be 1000 and not sure why???
   if (subSeconds < cyclesPerSec && swingBack == true) {pendulumPos = 27.0 + 3.4*(1.0+sin((3.14*fracOfSec)-1.57));}
   if (subSeconds < cyclesPerSec && swingBack == false) {pendulumPos = 27.0 + 3.4*(1.0+sin((3.14*fracOfSec)+1.57));}
-  uint8_t hourPos = _hourPos (now);
+
+  uint8_t hourPos = _hourPos (now.hour, now.minute);
+    
   // Pendulum lights are set first, so hour/min/sec lights override and don't flicker as millisec passes
-  leds[(pendulumPos + LEDOffset)%60].r = 100;
-  leds[(pendulumPos + LEDOffset)%60].g = 100;
-  leds[(pendulumPos + LEDOffset)%60].b = 100;
+  findLED(pendulumPos)->r = 100;
+  findLED(pendulumPos)->g = 100;
+  findLED(pendulumPos)->b = 100;
+    
   // The colours are set last, so if on same LED mixed colours are created
-  leds[(hourPos+LEDOffset+59)%60].r = 255;   
-  leds[(hourPos+LEDOffset)%60].r = 255;
-  leds[(hourPos+LEDOffset+1)%60].r = 255;
-  leds[(now.minute()+LEDOffset)%60].g = 255;
-  leds[(now.second()+LEDOffset)%60].b = 255;
+  // Hour (3 lines of code)
+          findLED(hourPos-1)->r = 30;
+          findLED(hourPos+1)->r = 30;
+          findLED(hourPos)->r  = 190;
+  
+  // Minute  
+          findLED(now.minute)->g = 255;
+    
+  // Second  
+          findLED(now.second)->b = 255;
 }
 
 void breathingClock(DateTime now)
