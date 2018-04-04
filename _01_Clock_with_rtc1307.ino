@@ -15,15 +15,17 @@
 RTC_DS1307 RTC; // Establishes the chipset of the Real Time Clock
 
 // Pin definitions:
-#define rotaryeft 4
+#define rotaryLeft 4
 #define rotaryRight 5
 #define LEDStripPin 9 // Pin used for the data to the LED strip
 #define menuPin 2 // Arduino Pro Mini supports external interrupts only on pins 2 and 3
+
+
 #define startingLEDs 4 // Number of LEDs BEFORE the strip
 #define numLEDs 60 // Number of LEDs in strip
 
 // Setting up the LED strip
-struct CRGB leds[numLEDs];
+struct CRGB leds[startingLEDs+numLEDs];
 Encoder rotary1(rotaryLeft, rotaryRight); // Setting up the Rotary Encoder
 #define ROTARY_TICKS 4
 
@@ -43,7 +45,7 @@ float cyclesPerSecFloat; // So can be used as a float in calcs
 float fracOfSec;
 float breathFracOfSec;
 boolean demo;
-#define demoTime 12 // seconds
+#define demoTime 15 // seconds
 long previousDemoTime;
 long currentDemoTime;
 boolean swingBack = false;
@@ -110,13 +112,12 @@ int fiveMins;
 int odd;
 int LEDOffset = 30;
 
-void setup()
-{
+void setup() {
   // Set up all pins
   pinMode(menuPin, INPUT_PULLUP);     // Uses the internal 20k pull up resistor. Pre Arduino_v.1.0.1 need to be "digitalWrite(menuPin,HIGH);pinMode(menuPin,INPUT);"
     
   // Start LEDs
-  LEDS.addLeds<WS2811, LEDStripPin, GRB>(leds, numLEDs); // Structure of the LED data. I have changed to from rgb to grb, as using an alternative LED strip. Test & change these if you're getting different colours. 
+  LEDS.addLeds<WS2811, LEDStripPin, GRB>(leds, startingLEDs+numLEDs); // Structure of the LED data. I have changed to from rgb to grb, as using an alternative LED strip. Test & change these if you're getting different colours. 
   
   // Start RTC
   Wire.begin(); // Starts the Wire library allows I2C communication to the Real Time Clock
@@ -165,9 +166,7 @@ void setup()
   Serial.println(now.day());
 }
 
-
-void loop()
-{
+void loop() {
   DateTime now = RTC.now(); // Fetches the time from RTC
   
   // Check for any button presses and action accordingley
@@ -582,48 +581,6 @@ void alarmDisplay() // Displays the alarm
             leds[i].b = LEDBrightness;
           }
         break;
-
-// Currently not working        
-//      case 4:
-//        fadeTime = 60000;
-//        brightFadeRad = (millis() - alarmTrigTime)/fadeTime; // Divided by the time period of the fade up.
-//        LEDPosition = ((millis() - alarmTrigTime)/(fadeTime/30));
-////        if (millis() > alarmTrigTime + fadeTime) LEDBrightness = 255; // If the fade time is complete, then the LED brightness will be set to full.
-//        if (brightFadeRad <= 0) LEDBrightness = 0;
-//        else if (brightFadeRad >= 0) LEDBrightness = 1;
-//        else LEDBrightness = 255.0*(1.0+sin((1.57*brightFadeRad)-1.57));
-//        
-////        Serial.println(brightFadeRad);
-////        Serial.println(LEDBrightness);
-//        reverseLEDPosition = 60 - LEDPosition;
-//        if (LEDPosition >= 0 && LEDPosition <= 29)
-//          {
-//            for (int i = 0; i < LEDPosition; i++)
-//              {
-//                leds[i].r = LEDBrightness;
-//                leds[i].g = LEDBrightness;
-//                leds[i].b = LEDBrightness;
-//              }
-//          }
-//        if (reverseLEDPosition <= 59 && reverseLEDPosition >= 31)
-//          {
-//            for (int i = 59; i > reverseLEDPosition; i--)
-//              {
-//                leds[i].r = LEDBrightness;
-//                leds[i].g = LEDBrightness;
-//                leds[i].b = LEDBrightness;
-//              }              
-//          }
-//        if (LEDPosition >= 30)
-//          {
-//            for (int i = 0; i < numLEDs; i++)
-//              {
-//                leds[i].r = LEDBrightness;
-//                leds[i].g = LEDBrightness;
-//                leds[i].b = LEDBrightness;
-//              }           
-//          }  
-//        break;
     }
 }
 
@@ -803,11 +760,13 @@ void timeDisplay(DateTime now)
 // Add each of the new display mode functions as a new "case", leaving default last.
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-//
-void minimalClock(DateTime now)
-{
-  unsigned char hourPos = (now.hour()%12)*5;
-  leds[(hourPos+LEDOffset)%60].r = 255;
+uint8_t _hourPos (uint8_t hour) {
+  return (now.hour()%12)*5;
+}
+
+void minimalClock(DateTime now) {
+  uint8_t hourPos = _hourPos (now.hour);
+  leds[(_hourPos+LEDOffset)%60].r = 255;
   leds[(now.minute()+LEDOffset)%60].g = 255;
   leds[(now.second()+LEDOffset)%60].b = 255;
 }
