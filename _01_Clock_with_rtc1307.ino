@@ -115,8 +115,16 @@ int pendulumPos;
 int fiveMins;
 int odd;
 
-struct CRGB* findLED (uint8_t n) {
-  return &_leds[(LEDOffset+n)%numLEDs+startingLEDs];
+// Which LED (in [0..59] range) corresponds to given hh:mm time 
+uint8_t _hourPos (uint8_t hour, uint8_t minute) { 
+  uint8_t _hp = (hour%12)*5 + (minute+6)/12;
+  return (_hp == 60) ? 0 : _hp;
+}
+
+// Which offset (in [4..63] range) corresponds to given mm time 
+// First [0..3] offsets are reserved for backlight LEDs
+struct CRGB* findLED (uint8_t minute) {
+  return &_leds[(LEDOffset+minute)%numLEDs+startingLEDs];
 }
 
 void setup() {
@@ -744,24 +752,19 @@ void timeDisplay(DateTime now)
 // Add each of the new display mode functions as a new "case", leaving default last.
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t _hourPos (uint8_t hour, uint8_t minute) { // which LED corresponds to this time, in [0..59] range
-  uint8_t _hp = (hour%12)*5 + (minute+6)/12;
-  return (_hp == 60) ? 0 : _hp;
-}
-
 //
-void minimalClock(DateTime now)
-{
-  uint8_t hourPos = _hourPos (now);
-  leds[(hourPos+LEDOffset)%60].r = 255;
+void minimalClock(DateTime now) {
+  uint8_t hourPos = _hourPos (now.hour, now.minute);
+  
+  findLED(hourPos)->r = 255;
   leds[(now.minute()+LEDOffset)%60].g = 255;
   leds[(now.second()+LEDOffset)%60].b = 255;
 }
 
 //
-void basicClock(DateTime now)
-{
-  unsigned char hourPos = ((now.hour()%12)*5 + (now.minute()+6)/12);
+void basicClock(DateTime now) {
+  uint8_t hourPos = _hourPos (now.hour, now.minute);
+
   leds[(hourPos+LEDOffset+59)%60].r = 255;
   leds[(hourPos+LEDOffset+59)%60].g = 0;
   leds[(hourPos+LEDOffset+59)%60].b = 0;  
