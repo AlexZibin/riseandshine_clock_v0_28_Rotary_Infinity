@@ -852,11 +852,16 @@ void outlineClock(DateTime now)
   }
   uint8_t hourPos = _hourPos (now.hour, now.minute);
 
-  leds[(hourPos+LEDOffset+59)%60].r = 255;   
-  leds[(hourPos+LEDOffset)%60].r = 255;
-  leds[(hourPos+LEDOffset+1)%60].r = 255;
-  leds[(now.minute()+LEDOffset)%60].g = 255;
-  leds[(now.second()+LEDOffset)%60].b = 255;
+  // Hour (3 lines of code)
+          findLED(hourPos-1)->r = 30;
+          findLED(hourPos+1)->r = 30;
+          findLED(hourPos)->r  = 190;
+  
+  // Minute  
+          findLED(now.minute)->g = 255;
+    
+  // Second  
+          findLED(now.second)->b = 255;
 }
 
 //
@@ -927,31 +932,33 @@ void simplePendulum(DateTime now)
 
 void breathingClock(DateTime now)
 {
-  if (alarmTrig == false)
-    {
+  if (alarmTrig == false) {
       breathBrightness = 15.0*(1.0+sin((3.14*millis()/2000.0)-1.57));
-      for (int i = 0; i < numLEDs; i++)
-        {
+      for (int i = 0; i < numLEDs; i++) {
           fiveMins = i%5;
-          if (fiveMins == 0)
-            {
-              leds[i].r = breathBrightness + 5;
-              leds[i].g = breathBrightness + 5;
-              leds[i].b = breathBrightness + 5;
-            }
-          else
-            {
-              leds[i].r = 0;
-              leds[i].g = 0;
-              leds[i].b = 0;
-            }
-        }
-    }
-  uint8_t hourPos = _hourPos (now);
-  leds[(hourPos+LEDOffset+59)%60].r = 255;   
-  leds[(hourPos+LEDOffset)%60].r = 255;
-  leds[(hourPos+LEDOffset+1)%60].r = 255;
-  leds[(now.minute()+LEDOffset)%60].g = 255;
-  leds[(now.second()+LEDOffset)%60].b = 255;
+          if (fiveMins == 0) {
+              findLED(i)->r = breathBrightness + 5;
+              findLED(i)->g = breathBrightness + 5;
+              findLED(i)->b = breathBrightness + 5;
+          } else {
+              findLED(i)->r = 0;
+              findLED(i)->g = 0;
+              findLED(i)->b = 0;
+          }
+       }
+  }
+  
+  uint8_t hourPos = _hourPos (now.hour, now.minute);
+
+  // Hour (3 lines of code)
+          findLED(hourPos-1)->r = 30;
+          findLED(hourPos+1)->r = 30;
+          findLED(hourPos)->r  = 190;
+  
+  // Minute  
+          findLED(now.minute)->g = 255;
+    
+  // Second  
+          findLED(now.second)->b = 255;
 }
 
