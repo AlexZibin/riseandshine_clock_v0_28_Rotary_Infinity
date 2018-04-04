@@ -760,21 +760,21 @@ void timeDisplay(DateTime now)
 // Add each of the new display mode functions as a new "case", leaving default last.
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t _hourPos (uint8_t hour) {
-  return (now.hour()%12)*5;
+uint8_t _hourPos (DateTime now) {
+  return (now.hour()%12)*5 + (now.minute()+6)/12;
 }
 
 void minimalClock(DateTime now) {
-  uint8_t hourPos = _hourPos (now.hour);
-  leds[(_hourPos+LEDOffset)%60].r = 255;
+  uint8_t hourPos = _hourPos (now);
+
+  leds[(hourPos+LEDOffset)%60].r = 255;
   leds[(now.minute()+LEDOffset)%60].g = 255;
   leds[(now.second()+LEDOffset)%60].b = 255;
 }
 
-//
-void basicClock(DateTime now)
-{
-  unsigned char hourPos = ((now.hour()%12)*5 + (now.minute()+6)/12);
+void basicClock(DateTime now) {
+  uint8_t hourPos = _hourPos (now);
+
   leds[(hourPos+LEDOffset+59)%60].r = 255;
   leds[(hourPos+LEDOffset+59)%60].g = 0;
   leds[(hourPos+LEDOffset+59)%60].b = 0;  
@@ -794,8 +794,7 @@ void basicClock(DateTime now)
 }
 
 // 
-void smoothSecond(DateTime now)
-{
+void smoothSecond(DateTime now) {
   if (now.second()!=old.second())
     {
       old = now;
@@ -807,7 +806,8 @@ void smoothSecond(DateTime now)
   fracOfSec = (millis() - newSecTime)/cyclesPerSecFloat;  // This divides by 733, but should be 1000 and not sure why???
   if (subSeconds < cyclesPerSec) {secondBrightness = 50.0*(1.0+sin((3.14*fracOfSec)-1.57));}
   if (subSeconds < cyclesPerSec) {secondBrightness2 = 50.0*(1.0+sin((3.14*fracOfSec)+1.57));}
-  unsigned char hourPos = ((now.hour()%12)*5 + (now.minute()+6)/12);
+
+  uint8_t hourPos = _hourPos (now);
   // The colours are set last, so if on same LED mixed colours are created
   leds[(hourPos+LEDOffset+59)%60].r = 255;   
   leds[(hourPos+LEDOffset)%60].r = 255;
@@ -830,7 +830,8 @@ void outlineClock(DateTime now)
           leds[i].b = 100;
         }
     }
-  unsigned char hourPos = ((now.hour()%12)*5 + (now.minute()+6)/12);
+  uint8_t hourPos = _hourPos (now);
+
   leds[(hourPos+LEDOffset+59)%60].r = 255;   
   leds[(hourPos+LEDOffset)%60].r = 255;
   leds[(hourPos+LEDOffset+1)%60].r = 255;
@@ -847,7 +848,8 @@ void minimalMilliSec(DateTime now)
       newSecTime = millis();
     } 
   // set hour, min & sec LEDs
-  unsigned char hourPos = ((now.hour()%12)*5 + (now.minute()+6)/12);
+
+  uint8_t hourPos = _hourPos (now);
   subSeconds = (((millis() - newSecTime)*60)/cyclesPerSec)%60;  // This divides by 733, but should be 1000 and not sure why???
   // Millisec lights are set first, so hour/min/sec lights override and don't flicker as millisec passes
   leds[(subSeconds+LEDOffset)%60].r = 50;
@@ -877,7 +879,7 @@ void simplePendulum(DateTime now)
   fracOfSec = (millis() - newSecTime)/cyclesPerSecFloat;  // This divides by 733, but should be 1000 and not sure why???
   if (subSeconds < cyclesPerSec && swingBack == true) {pendulumPos = 27.0 + 3.4*(1.0+sin((3.14*fracOfSec)-1.57));}
   if (subSeconds < cyclesPerSec && swingBack == false) {pendulumPos = 27.0 + 3.4*(1.0+sin((3.14*fracOfSec)+1.57));}
-  unsigned char hourPos = ((now.hour()%12)*5 + (now.minute()+6)/12);
+  uint8_t hourPos = _hourPos (now);
   // Pendulum lights are set first, so hour/min/sec lights override and don't flicker as millisec passes
   leds[(pendulumPos + LEDOffset)%60].r = 100;
   leds[(pendulumPos + LEDOffset)%60].g = 100;
@@ -912,7 +914,7 @@ void breathingClock(DateTime now)
             }
         }
     }
-  unsigned char hourPos = ((now.hour()%12)*5 + (now.minute()+6)/12);
+  uint8_t hourPos = _hourPos (now);
   leds[(hourPos+LEDOffset+59)%60].r = 255;   
   leds[(hourPos+LEDOffset)%60].r = 255;
   leds[(hourPos+LEDOffset+1)%60].r = 255;
@@ -920,50 +922,3 @@ void breathingClock(DateTime now)
   leds[(now.second()+LEDOffset)%60].b = 255;
 }
 
-
-/*
-// Cycle through the color wheel, equally spaced around the belt
-void rainbowCycle(uint8_t wait)
-{
-  uint16_t i, j;
-  for (j=0; j < 384 * 5; j++)
-    {     // 5 cycles of all 384 colors in the wheel
-      for (i=0; i < numLEDs; i++)
-        {
-          // tricky math! we use each pixel as a fraction of the full 384-color
-          // wheel (thats the i / strip.numPixels() part)
-          // Then add in j which makes the colors go around per pixel
-          // the % 384 is to make the wheel cycle around
-          strip.setPixelColor(i, Wheel(((i * 384 / numLEDs) + j) % 384));
-        }
-      delay(wait);
-    }
-}
-
-//Input a value 0 to 384 to get a color value.
-//The colours are a transition r - g - b - back to r
-
-uint32_t Wheel(uint16_t WheelPos)
-{
-  byte r, g, b;
-  switch(WheelPos / 128)
-  {
-    case 0:
-      r = 127 - WheelPos % 128; // red down
-      g = WheelPos % 128;       // green up
-      b = 0;                    // blue off
-      break;
-    case 1:
-      g = 127 - WheelPos % 128; // green down
-      b = WheelPos % 128;       // blue up
-      r = 0;                    // red off
-      break;
-    case 2:
-      b = 127 - WheelPos % 128; // blue down
-      r = WheelPos % 128;       // red up
-      g = 0;                    // green off
-      break;
-  }
-  return(strip.Color(r,g,b));
-}
-*/
