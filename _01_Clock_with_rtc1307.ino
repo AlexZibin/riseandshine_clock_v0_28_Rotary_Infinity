@@ -117,17 +117,19 @@ int pendulumPos;
 int fiveMins;
 int odd;
 
-// Which LED (in [0..59] range) corresponds to given hh:mm time 
-uint8_t _hourPos (uint8_t hour, uint8_t minute) { 
-  uint8_t _hp = (hour%12)*5 + (minute+6)/12;
-  return (_hp == 60) ? 0 : _hp;
-}
+// CONVERSIONS
+        // Which LED (in [0..59] range) corresponds to given hh:mm time 
+        uint8_t _hourPos (uint8_t hour, uint8_t minute) { 
+          uint8_t _hp = (hour%12)*5 + (minute+6)/12;
+          return (_hp == 60) ? 0 : _hp;
+        }
 
-// Which offset (in [4..63] range) corresponds to given mm time 
-// First [0..3] offsets are reserved for backlight LEDs
-struct CRGB* findLED (uint8_t minute) {
-  return &_leds[(LEDOffset+minute)%numLEDs+startingLEDs];
-}
+        // Which offset (in [4..63] range) corresponds to given [0..59] mm time 
+        // First [0..3] offsets are reserved for backlight LEDs
+        struct CRGB* findLED (uint8_t minute) {
+          return &_leds[(LEDOffset+minute)%numLEDs+startingLEDs];
+        }
+// END CONVERSIONS
 
 void setup() {
   // Set up all pins
