@@ -25,7 +25,7 @@ RTC_DS1307 RTC; // Establishes the chipset of the Real Time Clock
 #define numLEDs 60 // Number of LEDs in strip
 
 // Setting up the LED strip
-struct CRGB leds[startingLEDs+numLEDs];
+struct CRGB _leds[startingLEDs+numLEDs];
 Encoder rotary1(rotaryLeft, rotaryRight); // Setting up the Rotary Encoder
 #define ROTARY_TICKS 4
 
@@ -53,17 +53,7 @@ boolean swingBack = false;
 int timeHour;
 int timeMin;
 int timeSec;
-int alarmMin; // The minute of the alarm  
-int alarmHour; // The hour of the alarm 0-23
-int alarmDay = 0; // The day of the alarm
-boolean alarmSet; // Whether the alarm is set or not
 int modeAddress = 0; // Address of where mode is stored in the EEPROM
-int alarmMinAddress = 1; // Address of where alarm minute is stored in the EEPROM
-int alarmHourAddress = 2; // Address of where alarm hour is stored in the EEPROM
-int alarmSetAddress = 3; // Address of where alarm state is stored in the EEPROM
-int alarmModeAddress = 4; // Address of where the alarm mode is stored in the EEPROM
-boolean alarmTrig = false; // Whether the alarm has been triggered or not
-long alarmTrigTime; // Milli seconds since the alarm was triggered
 boolean countDown = false;
 long countDownTime = 0;
 long currentCountDown = 0;
@@ -80,20 +70,11 @@ float LEDBrightness = 0;
 float fadeTime;
 float brightFadeRad;
 
-int state = 0; // Variable of the state of the clock, with the following defined states 
-#define clockState 0
-#define alarmState 1
-#define setAlarmHourState 2
-#define setAlarmMinState 3
-#define setClockHourState 4
-#define setClockMinState 5
-#define setClockSecState 6
-#define countDownState 7
-#define demoState 8
+enum deviceState {clockState, setDigColorState, setDigBrightnessState, setClockHourState, setClockMinState, setClockSecState, demoState};
+deviceState state = clockState; // Variable of the state of the clock, with the following defined states 
+
 int mode; // Variable of the display mode of the clock
-int modeMax = 6; // Change this when new modes are added. This is so selecting modes can go back beyond.
-int alarmMode; // Variable of the alarm display mode
-int alarmModeMax = 3;
+#define modeMax 6 // Change this when new modes are added. This is so selecting modes can go back beyond.
 
 Bounce menuBouncer = Bounce(menuPin,20); // Instantiate a Bounce object with a 50 millisecond debounce time for the menu button
 boolean menuButton = false; 
@@ -112,18 +93,23 @@ int fiveMins;
 int odd;
 int LEDOffset = 30;
 
+struct CRGB* findLED (uint8_t n) {
+  return &_leds[(LEDOffset+n)%numLEDs+startingLEDs];
+}
+
 void setup() {
   // Set up all pins
   pinMode(menuPin, INPUT_PULLUP);     // Uses the internal 20k pull up resistor. Pre Arduino_v.1.0.1 need to be "digitalWrite(menuPin,HIGH);pinMode(menuPin,INPUT);"
     
   // Start LEDs
-  LEDS.addLeds<WS2811, LEDStripPin, GRB>(leds, startingLEDs+numLEDs); // Structure of the LED data. I have changed to from rgb to grb, as using an alternative LED strip. Test & change these if you're getting different colours. 
+  LEDS.addLeds<WS2811, LEDStripPin, GRB>(_leds, startingLEDs+numLEDs); // Structure of the LED data. I have changed to from rgb to grb, as using an alternative LED strip. Test & change these if you're getting different colours. 
   
   // Start RTC
   Wire.begin(); // Starts the Wire library allows I2C communication to the Real Time Clock
   RTC.begin(); // Starts communications to the RTC
   
   Serial.begin(9600); // Starts the serial communications
+  while(!Serial);
 
   // Uncomment to reset all the EEPROM addresses. You will have to comment again and reload, otherwise it will not save anything each time power is cycled
   // write a 0 to all 512 bytes of the EEPROM
@@ -131,25 +117,11 @@ void setup() {
 //  {EEPROM.write(i, 0);}
 
   // Load any saved setting since power off, such as mode & alarm time  
-  mode = EEPROM.read(modeAddress); // The mode will be stored in the address "0" of the EEPROM
-  alarmMin = EEPROM.read(alarmMinAddress); // The mode will be stored in the address "1" of the EEPROM
-  alarmHour = EEPROM.read(alarmHourAddress); // The mode will be stored in the address "2" of the EEPROM
-  alarmSet = EEPROM.read(alarmSetAddress); // The mode will be stored in the address "2" of the EEPROM
-  alarmMode = EEPROM.read(alarmModeAddress);
+  mode = 0; // EEPROM.read(modeAddress); // The mode will be stored in the address "0" of the EEPROM
   // Prints all the saved EEPROM data to Serial
   Serial.print("Mode is ");Serial.println(mode);
-  Serial.print("Alarm Hour is ");Serial.println(alarmHour);
-  Serial.print("Alarm Min is ");Serial.println(alarmMin);
-  Serial.print("Alarm is set ");Serial.println(alarmSet);
-  Serial.print("Alarm Mode is ");Serial.println(alarmMode);
 
-  // create a loop that calcuated the number of counted milliseconds between each second.
   DateTime now = RTC.now();
-  //  startTime = millis();  
-  //  while (RTC.old() = RTC.new())
-  
-  //  if (now.month() == 1 && now.day() == 1 && now.hour() == 0 && now.minute() == 0 && now.minute() == 0)
-  //    {}
       
   Serial.print("Hour time is... ");
   Serial.println(now.hour());
@@ -187,27 +159,10 @@ void loop() {
   if (menuButton == true || advanceMove != 0 || countTime == true) {buttonCheck(menuBouncer,now);}
   
   // clear LED array
-  memset(leds, 0, numLEDs * 3);
+  clearLeds();
   
-  // Check alarm and trigger if the time matches
-  if (alarmSet == true && alarmDay != now.day()) // The alarmDay statement ensures it is a newly set alarm or repeat from previous day, not within the minute of an alarm cancel.
-    {
-      if (alarmTrig == false) {alarm(now);}
-      else {alarmDisplay();}
-    }
- // Check the Countdown Timer
-  if (countDown == true)
-    {
-      currentCountDown = countDownTime + startCountDown - now.unixtime();
-      if ( currentCountDown <= 0)
-        {
-          state =countDownState;
-        }
-    } 
   // Set the time LED's
   if (state == setClockHourState || state == setClockMinState || state == setClockSecState) {setClockDisplay(now);}
-  else if (state == alarmState || state == setAlarmHourState || state == setAlarmMinState) {setAlarmDisplay();}
-  else if (state == countDownState) {countDownDisplay(now);}
   else if (state == demoState) {runDemo(now);}
   else {timeDisplay(now);}
 
@@ -416,73 +371,7 @@ void buttonCheck(Bounce menuBouncer, DateTime now)
   Serial.println(state);
 }
 
-void setAlarmDisplay()
-{
-
-  for (int i = 0; i < numLEDs; i++)
-    {
-      fiveMins = i%5;
-      if (fiveMins == 0)
-        {
-          leds[i].r = 100;
-          leds[i].g = 100;
-          leds[i].b = 100;
-        }
-    }
-
-  if (alarmSet == 0)
-    {
-      for (int i = 0; i < numLEDs; i++) // Sets background to red, to state that alarm IS NOT set
-        {
-          fiveMins = i%5;
-          if (fiveMins == 0)
-            {
-              leds[i].r = 20;
-              leds[i].g = 0;
-              leds[i].b = 0;
-            }  
-        }     
-    }
-  else
-    {
-      for (int i = 0; i < numLEDs; i++) // Sets background to green, to state that alarm IS set
-        {
-          fiveMins = i%5;
-          if (fiveMins == 0)
-            {
-              leds[i].r = 0;
-              leds[i].g = 20;
-              leds[i].b = 0;
-            }  
-        }     
-    }
-  if (alarmHour <= 11)
-    {
-      leds[(alarmHour*5+LEDOffset)%60].r = 255;
-    }
-  else
-    {
-      leds[((alarmHour - 12)*5+LEDOffset+59)%60].r = 25;    
-      leds[((alarmHour - 12)*5+LEDOffset)%60].r = 255;
-      leds[((alarmHour - 12)*5+LEDOffset+1)%60].r = 25;
-    }
-  leds[(alarmMin+LEDOffset)%60].g = 100;
-  flashTime = millis();
-  if (state == setAlarmHourState && flashTime%300 >= 150)
-    {
-      leds[(((alarmHour%12)*5)+LEDOffset+59)%60].r = 0;   
-      leds[(((alarmHour%12)*5)+LEDOffset)%60].r = 0;
-      leds[(((alarmHour%12)*5)+LEDOffset+1)%60].r = 0; 
-    }
-  if (state == setAlarmMinState && flashTime%300 >= 150)
-    {
-      leds[(alarmMin+LEDOffset)%60].g = 0;
-    }
-  leds[(alarmMode+LEDOffset)%60].b = 255;
-}
-
-void setClockDisplay(DateTime now)
-{
+void setClockDisplay (DateTime now) {
   for (int i = 0; i < numLEDs; i++)
     {
       fiveMins = i%5;
@@ -513,6 +402,7 @@ void setClockDisplay(DateTime now)
   else {leds[(now.second()+LEDOffset)%60].b = 255;}
 }
 
+/*
 // Check if alarm is active and if is it time for the alarm to trigger
 void alarm(DateTime now)
 {
@@ -649,6 +539,7 @@ void countDownDisplay(DateTime now)
         }
     }
 }
+*/
 
 void runDemo(DateTime now)
 {
