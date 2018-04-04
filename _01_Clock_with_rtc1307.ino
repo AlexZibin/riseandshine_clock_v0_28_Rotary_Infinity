@@ -712,14 +712,12 @@ void runDemo(DateTime now)
     }
 }
 
-void clearLEDs()
-{      
-  for (int i = 0; i < numLEDs; i++) // Set all the LEDs to off
-    {
+void clearLEDs() {      
+  for (int i = startingLEDs; i < startingLEDs+numLEDs; i++) {
       leds[i].r = 0;
       leds[i].g = 0;
       leds[i].b = 0;
-    }
+  }
 }
 
 void timeDisplay(DateTime now)
