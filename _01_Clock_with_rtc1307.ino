@@ -445,74 +445,74 @@ void setAlarmDisplay() {
   }
 
   if (alarmSet == 0) {
-      for (int i = 0; i < numLEDs; i+=5) { // Sets background to red, to state that alarm IS NOT set
-        findLED(i)->r = 20;
-        findLED(i)->g = 0;
-        findLED(i)->b = 0;
+      for (int i = 0; i < numLEDs; i+=5) { 
+            // Sets background to red, to state that alarm IS NOT set
+            findLED(i)->r = 20;
+            findLED(i)->g = 0;
+            findLED(i)->b = 0;
       }     
   } else {
-      for (int i = 0; i < numLEDs; i+=5) // Sets background to green, to state that alarm IS set
-        {
-            {
-              findLED(i)->r = 0;
-              findLED(i)->g = 20;
-              findLED(i)->b = 0;
-            }  
-        }     
+      for (int i = 0; i < numLEDs; i+=5) {
+          // Sets background to green, to state that alarm IS set
+          findLED(i)->r = 0;
+          findLED(i)->g = 20;
+          findLED(i)->b = 0;
+      }     
   }
   
   if (alarmHour <= 11) {
-      findLED(_hourPos(alarmHour, alarmMin))->.r = 255;
+      findLED(_hourPos(alarmHour, alarmMin))->r = 255;
   } else {
-      findLED(_hourPos(alarmHour, alarmMin))->.r = 255;
-      findLED(_hourPos(alarmHour, alarmMin)-1)->.r = 30;
-      findLED(_hourPos(alarmHour, alarmMin)+1)->.r = 30;
+      findLED(_hourPos(alarmHour, alarmMin))->r = 190;
+      findLED(_hourPos(alarmHour, alarmMin)-1)->r = 30;
+      findLED(_hourPos(alarmHour, alarmMin)+1)->r = 30;
   }
-  leds[(alarmMin+LEDOffset)%60].g = 100;
+  
+  findLED(alarmMin)->g = 100;
   flashTime = millis();
   if (state == setAlarmHourState && flashTime%300 >= 150)
     {
-      leds[(((alarmHour%12)*5)+LEDOffset+59)%60].r = 0;   
-      leds[(((alarmHour%12)*5)+LEDOffset)%60].r = 0;
-      leds[(((alarmHour%12)*5)+LEDOffset+1)%60].r = 0; 
+      findLED(_hourPos(alarmHour, alarmMin))->r = 0;
+      findLED(_hourPos(alarmHour, alarmMin)-1)->r = 0;
+      findLED(_hourPos(alarmHour, alarmMin)+1)->r = 0;
     }
-  if (state == setAlarmMinState && flashTime%300 >= 150)
-    {
-      leds[(alarmMin+LEDOffset)%60].g = 0;
-    }
-  leds[(alarmMode+LEDOffset)%60].b = 255;
+  if (state == setAlarmMinState && flashTime%300 >= 150) {
+      findLED(alarmMin)->g = 0;
+  }
+  findLED(alarmMode)->b = 255;
 }
 
-void setClockDisplay(DateTime now)
-{
-  for (int i = 0; i < numLEDs; i++)
-    {
-      fiveMins = i%5;
-      if (fiveMins == 0)
-        {
-          leds[i].r = 10;
-          leds[i].g = 10;
-          leds[i].b = 10;
-        }
-    } 
-  if (now.hour() <= 11) {leds[(now.hour()*5+LEDOffset)%60].r = 255;}
-  else
-    {
-      leds[((now.hour() - 12)*5+LEDOffset+59)%60].r = 255;
-      leds[((now.hour() - 12)*5+LEDOffset)%60].r = 255;   
-      leds[((now.hour() - 12)*5+LEDOffset+1)%60].r = 255;
-    }
+void setClockDisplay (DateTime now) {
+
+  for (int i = 0; i < numLEDs; i+=numLEDs/12) {
+      findLED(i)->r = 100;
+      findLED(i)->g = 100;
+      findLED(i)->b = 100;
+  }
+
+  if (now.hour() <= 11) {findLED(_hourPos(now.hour(), now.minute()))->r = 255;}
+  else {
+      findLED(_hourPos(now.hour(), now.minute()))->r = 190;
+      findLED(_hourPos(now.hour(), now.minute())-1)->r = 30;
+      findLED(_hourPos(now.hour(), now.minute())+1)->r = 30;
+  }
   flashTime = millis();
-  if (state == setClockHourState && flashTime%300 >= 150)
-    {
-      leds[(((now.hour()%12)*5)+LEDOffset+59)%60].r = 0;   
-      leds[((now.hour()%12)*5+LEDOffset)%60].r = 0;
-      leds[(((now.hour()%12)*5)+LEDOffset+1)%60].r = 0; 
-    }
-  if (state == setClockMinState && flashTime%300 >= 150) {leds[(now.minute()+LEDOffset)%60].g = 0;}
-  else {leds[(now.minute()+LEDOffset)%60].g = 255;}
-  if (state == setClockSecState && flashTime%300 >= 150) {leds[(now.second()+LEDOffset)%60].b = 0;}
-  else {leds[(now.second()+LEDOffset)%60].b = 255;}
+  if (state == setClockHourState && flashTime%300 >= 150) {
+      findLED(_hourPos(now.hour(), now.minute()))->r = 0;
+      findLED(_hourPos(now.hour(), now.minute())-1)->r = 0;
+      findLED(_hourPos(now.hour(), now.minute())+1)->r = 0;
+  }
+    
+  if (state == setClockMinState && flashTime%300 >= 150) {
+      findLED(now.minute())->g = 0;
+  } else {
+      findLED(now.minute())->g = 255;
+  }
+  if (state == setClockSecState && flashTime%300 >= 150) {
+      findLED(now.second())->b = 0;
+  } else {
+      findLED(now.second())->b = 255;
+  }
 }
 
 // Check if alarm is active and if is it time for the alarm to trigger
