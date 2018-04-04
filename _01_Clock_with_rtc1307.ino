@@ -20,8 +20,9 @@ RTC_DS1307 RTC; // Establishes the chipset of the Real Time Clock
 #define LEDStripPin 9 // Pin used for the data to the LED strip
 #define menuPin 2 // Arduino Pro Mini supports external interrupts only on pins 2 and 3
 
-#define startingLEDs 4 // Number of LEDs BEFORE the strip
+#define startingLEDs 4 // Number of backlight LEDs BEFORE the strip
 #define numLEDs 60 // Number of LEDs in strip
+#define LEDOffset  30 // First LED in strip corresponds to 30-th second
 
 // Setting up the LED strip
 struct CRGB _leds[startingLEDs+numLEDs];
@@ -44,7 +45,7 @@ float cyclesPerSecFloat; // So can be used as a float in calcs
 float fracOfSec;
 float breathFracOfSec;
 boolean demo;
-#define demoTime 12 // seconds
+#define demoTime 15 // seconds
 long previousDemoTime;
 long currentDemoTime;
 boolean swingBack = false;
@@ -56,11 +57,15 @@ int alarmMin; // The minute of the alarm
 int alarmHour; // The hour of the alarm 0-23
 int alarmDay = 0; // The day of the alarm
 boolean alarmSet; // Whether the alarm is set or not
-int modeAddress = 0; // Address of where mode is stored in the EEPROM
-int alarmMinAddress = 1; // Address of where alarm minute is stored in the EEPROM
-int alarmHourAddress = 2; // Address of where alarm hour is stored in the EEPROM
-int alarmSetAddress = 3; // Address of where alarm state is stored in the EEPROM
-int alarmModeAddress = 4; // Address of where the alarm mode is stored in the EEPROM
+
+#define modeAddress  0 // Address of where mode is stored in the EEPROM
+#define alarmMinAddress 1 // Address of where alarm minute is stored in the EEPROM
+#define alarmHourAddress 2 // Address of where alarm hour is stored in the EEPROM
+#define alarmSetAddress 3 // Address of where alarm state is stored in the EEPROM
+#define alarmModeAddress 4 // Address of where the alarm mode is stored in the EEPROM
+#define magicValAddress 5
+#define magicVal 0x3B
+
 boolean alarmTrig = false; // Whether the alarm has been triggered or not
 long alarmTrigTime; // Milli seconds since the alarm was triggered
 boolean countDown = false;
@@ -89,9 +94,9 @@ int state = 0; // Variable of the state of the clock, with the following defined
 #define setClockSecState 6
 #define countDownState 7
 #define demoState 8
-int mode; // Variable of the display mode of the clock
+int mode = 0; // Variable of the display mode of the clock
 int modeMax = 6; // Change this when new modes are added. This is so selecting modes can go back beyond.
-int alarmMode; // Variable of the alarm display mode
+int alarmMode=0; // Variable of the alarm display mode
 int alarmModeMax = 3;
 
 Bounce menuBouncer = Bounce(menuPin,20); // Instantiate a Bounce object with a 50 millisecond debounce time for the menu button
@@ -110,20 +115,16 @@ int pendulumPos;
 int fiveMins;
 int odd;
 
-#define LEDOffset  30
-
 struct CRGB* findLED (uint8_t n) {
   return &_leds[(LEDOffset+n)%numLEDs+startingLEDs];
 }
 
-
-void setup()
-{
+void setup() {
   // Set up all pins
-  pinMode(menuPin, INPUT_PULLUP);     // Uses the internal 20k pull up resistor. Pre Arduino_v.1.0.1 need to be "digitalWrite(menuPin,HIGH);pinMode(menuPin,INPUT);"
+  pinMode(menuPin, INPUT_PULLUP); 
     
   // Start LEDs
-  LEDS.addLeds<WS2811, LEDStripPin, GRB>(leds, numLEDs); // Structure of the LED data. I have changed to from rgb to grb, as using an alternative LED strip. Test & change these if you're getting different colours. 
+  LEDS.addLeds<WS2811, LEDStripPin, GRB>(leds, startingLEDs+numLEDs); 
   
   // Start RTC
   Wire.begin(); // Starts the Wire library allows I2C communication to the Real Time Clock
@@ -131,23 +132,23 @@ void setup()
   
   Serial.begin(9600); // Starts the serial communications
 
-  // Uncomment to reset all the EEPROM addresses. You will have to comment again and reload, otherwise it will not save anything each time power is cycled
-  // write a 0 to all 512 bytes of the EEPROM
-//  for (int i = 0; i < 512; i++)
-//  {EEPROM.write(i, 0);}
-
   // Load any saved setting since power off, such as mode & alarm time  
-  mode = EEPROM.read(modeAddress); // The mode will be stored in the address "0" of the EEPROM
-  alarmMin = EEPROM.read(alarmMinAddress); // The mode will be stored in the address "1" of the EEPROM
-  alarmHour = EEPROM.read(alarmHourAddress); // The mode will be stored in the address "2" of the EEPROM
-  alarmSet = EEPROM.read(alarmSetAddress); // The mode will be stored in the address "2" of the EEPROM
-  alarmMode = EEPROM.read(alarmModeAddress);
-  // Prints all the saved EEPROM data to Serial
-  Serial.print("Mode is ");Serial.println(mode);
-  Serial.print("Alarm Hour is ");Serial.println(alarmHour);
-  Serial.print("Alarm Min is ");Serial.println(alarmMin);
-  Serial.print("Alarm is set ");Serial.println(alarmSet);
-  Serial.print("Alarm Mode is ");Serial.println(alarmMode);
+  if (EEPROM.read(magicValAddress) == magicVal) {
+    mode = EEPROM.read(modeAddress); // The mode will be stored in the address "0" of the EEPROM
+    alarmMin = EEPROM.read(alarmMinAddress); // The mode will be stored in the address "1" of the EEPROM
+    alarmHour = EEPROM.read(alarmHourAddress); // The mode will be stored in the address "2" of the EEPROM
+    alarmSet = EEPROM.read(alarmSetAddress); // The mode will be stored in the address "2" of the EEPROM
+    alarmMode = EEPROM.read(alarmModeAddress);
+    // Prints all the saved EEPROM data to Serial
+    Serial.print("Mode is ");Serial.println(mode);
+    Serial.print("Alarm Hour is ");Serial.println(alarmHour);
+    Serial.print("Alarm Min is ");Serial.println(alarmMin);
+    Serial.print("Alarm is set ");Serial.println(alarmSet);
+    Serial.print("Alarm Mode is ");Serial.println(alarmMode);
+  } else
+    Serial.print("EEPROM was empty. Writing magicVal to it.");
+    EEPROM.write(magicValAddress, magicVal);
+  }
 
   // create a loop that calcuated the number of counted milliseconds between each second.
   DateTime now = RTC.now();
