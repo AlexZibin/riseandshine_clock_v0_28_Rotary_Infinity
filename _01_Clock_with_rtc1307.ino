@@ -10,11 +10,12 @@
 RTC_DS1307 RTC; // Establishes the chipset of the Real Time Clock
 
 // Pin definitions:
-#define rotaryLeft 4
-#define rotaryRight 5
-#define LEDStripPin 9 // Pin used for the data to the LED strip
-#define menuPin 2 // Arduino Pro Mini supports external interrupts only on pins 2 and 3
-#define reedSwitchPin 3 // Switches off the display to reduce power consumption (before re-flashing)
+    #define rotaryLeft 4
+    #define rotaryRight 5
+    #define LEDStripPin 9 // Data pin
+    #define menuPin 2 // Arduino Pro Mini supports external interrupts only on pins 2 and 3
+    #define reedSwitchPin 3 // Switches off the display to reduce power consumption (before re-flashing)
+// Arduino Pro Mini i2c: SDA = A4, SCL = A5.    
 
 #define startingLEDs 4 // Number of backlight LEDs BEFORE the strip
 #define numLEDs 60 // Number of LEDs in strip
@@ -136,14 +137,43 @@ void setup() {
   // Set up all pins
   pinMode(menuPin, INPUT_PULLUP); 
     
+  Serial.begin(9600); // Starts the serial communications
+  while (!Serial);
+  
+  Serial.println("\n\n");
+  Serial.println(__FILE__);
+
+  // sanity check delay - allows reprogramming if accidently blowing power w/leds
+  delay(2000);
+
   // Start LEDs
   LEDS.addLeds<WS2811, LEDStripPin, GRB>(_leds, startingLEDs+numLEDs); 
+  LEDS.clear(true);
   
   // Start RTC
-  Wire.begin(); // Arduino Ptro Mini i2c: SDA = A4, SCL = A5.
-  RTC.begin(); // Starts communications to the RTC
-  
-  Serial.begin(9600); // Starts the serial communications
+  Wire.begin(); // Arduino Pro Mini i2c: SDA = A4, SCL = A5.
+  if (!RTC.begin()) { // Starts communications to the RTC
+        Serial.println("Couldn't find RTC");
+  }
+  if (!RTC.isrunning()) {
+    Serial.println("RTC is NOT running!");
+    RTC.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  }
+  //RTC.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  DateTime now = RTC.now();
+  Serial.print("Hour time is... ");
+  Serial.println(now.hour());
+  Serial.print("Min time is... ");
+  Serial.println(now.minute());
+  Serial.print("Sec time is... ");
+  Serial.println(now.second());
+
+  Serial.print("Year is... ");
+  Serial.println(now.year());
+  Serial.print("Month is... ");
+  Serial.println(now.month());
+  Serial.print("Day is... ");
+  Serial.println(now.day());
 
   // Load any saved setting since power off, such as mode & alarm time  
   if (EEPROM.read(magicValAddress) == magicVal) {
@@ -158,7 +188,7 @@ void setup() {
     Serial.print("Alarm Min is ");Serial.println(alarmMin);
     Serial.print("Alarm is set ");Serial.println(alarmSet);
     Serial.print("Alarm Mode is ");Serial.println(alarmMode);
-  } else
+  } else {
     Serial.print("EEPROM was empty. Writing magicVal to it.");
     EEPROM.write(magicValAddress, magicVal);
   
@@ -167,24 +197,7 @@ void setup() {
     EEPROM.write(alarmHourAddress, alarmHour); 
     EEPROM.write(alarmSetAddress, alarmSet); 
     EEPROM.write(alarmModeAddress, alarmMode);
-  }
-
-  // create a loop that calcuated the number of counted milliseconds between each second.
-  DateTime now = RTC.now();
-      
-  Serial.print("Hour time is... ");
-  Serial.println(now.hour());
-  Serial.print("Min time is... ");
-  Serial.println(now.minute());
-  Serial.print("Sec time is... ");
-  Serial.println(now.second());
-
-  Serial.print("Year is... ");
-  Serial.println(now.year());
-  Serial.print("Month is... ");
-  Serial.println(now.month());
-  Serial.print("Day is... ");
-  Serial.println(now.day());
+  };
 }
 
 void loop() {
@@ -233,7 +246,8 @@ void loop() {
   else {timeDisplay(now);}
 
   // Update LEDs
-  LEDS.show();
+  backlightLEDs ();
+  LEDS.show ();
 }
 
 void buttonCheck(Bounce menuBouncer, DateTime now)
@@ -548,7 +562,7 @@ void alarmDisplay() // Displays the alarm
               {
                 findLED(i)->r = 5;
                 findLED(i)->g = 5;
-                findLED(i)->.b = 5;
+                findLED(i)->b = 5;
               }
           }
         if (reverseLEDPosition <= 59 && reverseLEDPosition >= 31)
@@ -602,36 +616,30 @@ void countDownDisplay(DateTime now)
               // Set a blue LED for each complete minute that is remaining 
               findLED(i+1)->b = 240;
           } 
-          findLED(i+1)->b = countDownSec; // Display the remaining secconds of the current minute as its brightness      
-        }
-      else
-        {
+          findLED(countDownMin+1)->b = countDownSec; // Display the remaining secconds of the current minute as its brightness      
+      }
+      else {
           countDownFlash = now.unixtime()%2;
-          if (countDownFlash == 0)
-            {
+          if (countDownFlash == 0) {
               for (int i = 0; i < numLEDs; i++) // Set the background as all off
                 {
                   findLED(i)->r = 0;
                   findLED(i)->g = 0;
                   findLED(i)->b = 0;
                 }
-            }
-          else
-            {
-              for (int i = 0; i < numLEDs; i++) // Set the background as all blue
-                {
+          }
+          else {
+              for (int i = 0; i < numLEDs; i++) {
+                  // Set the background as all blue
                   findLED(i)->r = 0;
                   findLED(i)->g = 0;
                   findLED(i)->b = 255;
-                }
-            }
+              }
+          }
         }
-    }
-  else
-    {
+    } else {
       currentCountDown = countDownTime;
-      if (countDownTime == 0)
-        {
+      if (countDownTime == 0) {
           currentMillis = millis();
           clearLEDs();
           switch (demoIntro)
@@ -778,16 +786,16 @@ void timeDisplay(DateTime now)
 
 //
 void minimalClock(DateTime now) {
-  uint8_t hourPos = _hourPos (now.hour, now.minute);
+  uint8_t hourPos = _hourPos (now.hour(), now.minute());
   
   findLED(hourPos)->r = 255;
-  findLED(now.minute)->g = 255;
-  findLED(now.second)->b = 255;
+  findLED(now.minute())->g = 255;
+  findLED(now.second())->b = 255;
 }
 
 //
 void basicClock(DateTime now) {
-  uint8_t hourPos = _hourPos (now.hour, now.minute);
+  uint8_t hourPos = _hourPos (now.hour(), now.minute());
 
   // Hour (9 lines of code)
           findLED(hourPos-1)->r = 30;
@@ -803,14 +811,14 @@ void basicClock(DateTime now) {
           findLED(hourPos)->b  =   0;
   
   // Minute  
-          findLED(now.minute)->r =   0;
-          findLED(now.minute)->g = 255;
-          findLED(now.minute)->b =   0;
+          findLED(now.minute())->r =   0;
+          findLED(now.minute())->g = 255;
+          findLED(now.minute())->b =   0;
     
   // Second  
-          findLED(now.second)->r =   0;
-          findLED(now.second)->g =   0;
-          findLED(now.second)->b = 255;
+          findLED(now.second())->r =   0;
+          findLED(now.second())->g =   0;
+          findLED(now.second())->b = 255;
 }
 
 // 
@@ -828,7 +836,7 @@ void smoothSecond(DateTime now)
   if (subSeconds < cyclesPerSec) {secondBrightness = 50.0*(1.0+sin((3.14*fracOfSec)-1.57));}
   if (subSeconds < cyclesPerSec) {secondBrightness2 = 50.0*(1.0+sin((3.14*fracOfSec)+1.57));}
 
-  uint8_t hourPos = _hourPos (now.hour, now.minute);
+  uint8_t hourPos = _hourPos (now.hour(), now.minute());
   // The colours are set last, so if on same LED mixed colours are created
   // Hour (3 lines of code)
           findLED(hourPos-1)->r = 30;
@@ -836,7 +844,7 @@ void smoothSecond(DateTime now)
           findLED(hourPos)->r  = 190;
   
   // Minute  
-          findLED(now.minute)->g = 255;
+          findLED(now.minute())->g = 255;
     
   // Second  
           findLED(now.second())->b = secondBrightness;
@@ -851,7 +859,7 @@ void outlineClock(DateTime now)
       findLED(i)->g = 100;
       findLED(i)->b = 100;
   }
-  uint8_t hourPos = _hourPos (now.hour, now.minute);
+  uint8_t hourPos = _hourPos (now.hour(), now.minute());
 
   // Hour (3 lines of code)
           findLED(hourPos-1)->r = 30;
@@ -859,10 +867,10 @@ void outlineClock(DateTime now)
           findLED(hourPos)->r  = 190;
   
   // Minute  
-          findLED(now.minute)->g = 255;
+          findLED(now.minute())->g = 255;
     
   // Second  
-          findLED(now.second)->b = 255;
+          findLED(now.second())->b = 255;
 }
 
 //
@@ -875,7 +883,7 @@ void minimalMilliSec(DateTime now)
       newSecTime = millis();
     } 
   // set hour, min & sec LEDs
-  uint8_t hourPos = _hourPos (now);
+  uint8_t hourPos = _hourPos (now.hour(), now.minute());
   subSeconds = (((millis() - newSecTime)*60)/cyclesPerSec)%60;  // This divides by 733, but should be 1000 and not sure why???
 
   // Millisec lights are set first, so hour/min/sec lights override and don't flicker as millisec passes
@@ -890,28 +898,30 @@ void minimalMilliSec(DateTime now)
           findLED(hourPos)->r  = 190;
   
   // Minute  
-          findLED(now.minute)->g = 255;
+          findLED(now.minute())->g = 255;
 }
 
 // Pendulum will be at the bottom and left for one second and right for one second
 void simplePendulum(DateTime now)
 {
-  if (now.second()!=old.second())
-    {
+  if (now.second()!=old.second()) {
       old = now;
       cyclesPerSec = millis() - newSecTime;
       cyclesPerSecFloat = (float) cyclesPerSec;
       newSecTime = millis();
-      if (swingBack == true) {swingBack = false;}
-      else {swingBack = true;}
-    } 
+      if (swingBack == true) {
+        swingBack = false;
+      } else {
+        swingBack = true;
+      }
+  } 
     
   // set hour, min & sec LEDs
   fracOfSec = (millis() - newSecTime)/cyclesPerSecFloat;  // This divides by 733, but should be 1000 and not sure why???
   if (subSeconds < cyclesPerSec && swingBack == true) {pendulumPos = 27.0 + 3.4*(1.0+sin((3.14*fracOfSec)-1.57));}
   if (subSeconds < cyclesPerSec && swingBack == false) {pendulumPos = 27.0 + 3.4*(1.0+sin((3.14*fracOfSec)+1.57));}
 
-  uint8_t hourPos = _hourPos (now.hour, now.minute);
+  uint8_t hourPos = _hourPos (now.hour(), now.minute());
     
   // Pendulum lights are set first, so hour/min/sec lights override and don't flicker as millisec passes
   findLED(pendulumPos)->r = 100;
@@ -925,10 +935,10 @@ void simplePendulum(DateTime now)
           findLED(hourPos)->r  = 190;
   
   // Minute  
-          findLED(now.minute)->g = 255;
+          findLED(now.minute())->g = 255;
     
   // Second  
-          findLED(now.second)->b = 255;
+          findLED(now.second())->b = 255;
 }
 
 void breathingClock(DateTime now)
@@ -949,7 +959,7 @@ void breathingClock(DateTime now)
        }
   }
   
-  uint8_t hourPos = _hourPos (now.hour, now.minute);
+  uint8_t hourPos = _hourPos (now.hour(), now.minute());
 
   // Hour (3 lines of code)
           findLED(hourPos-1)->r = 30;
@@ -957,9 +967,16 @@ void breathingClock(DateTime now)
           findLED(hourPos)->r  = 190;
   
   // Minute  
-          findLED(now.minute)->g = 255;
+          findLED(now.minute())->g = 255;
     
   // Second  
-          findLED(now.second)->b = 255;
+          findLED(now.second())->b = 255;
 }
 
+void backlightLEDs (void) {
+  for (int i = 0; i < startingLEDs; i++) {
+    _leds[i].r = 0;
+    _leds[i].g = 155;
+    _leds[i].b = 0;
+  }
+}
