@@ -20,7 +20,6 @@ RTC_DS1307 RTC; // Establishes the chipset of the Real Time Clock
 #define LEDStripPin 9 // Pin used for the data to the LED strip
 #define menuPin 2 // Arduino Pro Mini supports external interrupts only on pins 2 and 3
 
-
 #define startingLEDs 4 // Number of LEDs BEFORE the strip
 #define numLEDs 60 // Number of LEDs in strip
 
@@ -175,35 +174,19 @@ void buttonCheck(Bounce menuBouncer, DateTime now)
   if (menuBouncer.fallingEdge()) // Checks if a button is pressed, if so sets countTime to true
     {
       countTime = true;
-      Serial.println("rising edge");
+      Serial.println("falling edge");
     }
   if (menuBouncer.risingEdge()) // Checks if a button is released,
     {
       countTime = false;
       Serial.println("rising edge");
     } // if so sets countTime to false. Now the ...TimePressed will not be updated when enters the buttonCheck,
-  if (countTime) // otherwise will menuBouncer.duration will 
-    {
-      menuTimePressed = menuBouncer.duration();
-      if (menuTimePressed >= (holdTime - 100) && menuTimePressed <= holdTime)
-        {
-          clearLEDs();
-          LEDS.show();
-          delay(100);
-        }
-    }
   menuReleased = menuBouncer.risingEdge();
   if (menuPressed == true) {Serial.println("Menu Button Pressed");}
   if (menuReleased == true) {Serial.println("Menu Button Released");}
   Serial.print("Menu Bounce Duration ");
   Serial.println(menuTimePressed);
-  if (alarmTrig == true)
-    {
-      alarmTrig = false;
-      alarmDay = now.day(); // When the alarm is cancelled it will not display until next day. As without it, it would start again if within a minute, or completely turn off the alarm.
-      delay(300); // I added this 300ms delay, so there is time for the button to be released
-      return; // This return exits the buttonCheck function, so no actions are performs
-    }  
+
   switch (state)
     {
       case clockState: // State 0
@@ -212,10 +195,10 @@ void buttonCheck(Bounce menuBouncer, DateTime now)
             mode = modeMax;
             advanceMove = 0;
           }
-        else if(advanceMove != 0) //if displaying the clock, advance button is pressed & released, then mode will change
+        else if(advanceMove != 0) 
           {
             mode = mode + advanceMove;
-            EEPROM.write(modeAddress,mode);
+            //EEPROM.write(modeAddress,mode);
             advanceMove = 0;
           }
         else if(menuReleased == true) 
@@ -224,59 +207,8 @@ void buttonCheck(Bounce menuBouncer, DateTime now)
             else {state = setClockHourState;} // if displaying the clock, menu button is held & released, then clock hour can be set
           }
         break;
-      case alarmState: // State 1
-        if (advanceMove == -1 && alarmMode <= 0)
-          {
-            alarmMode = alarmModeMax;
-            alarmSet = 1;
-          }
-        else if (advanceMove == 1 && alarmMode >= alarmModeMax)
-          {
-            alarmMode = 0;
-            alarmSet = 0;
-          }
-        else if (advanceMove != 0)
-          {
-            alarmMode = alarmMode + advanceMove;
-            if (alarmMode == 0) {alarmSet = 0;}
-            else {alarmSet = 1;}
-          }          
-        Serial.print("alarmState is ");
-        Serial.println(alarmState);            
-        Serial.print("alarmMode is ");
-        Serial.println(alarmMode);
-        EEPROM.write(alarmSetAddress,alarmSet);
-        EEPROM.write(alarmModeAddress,alarmMode);
-        advanceMove = 0;
-        alarmTrig = false;
-        if (menuReleased == true) 
-          {
-            if (menuTimePressed <= holdTime) {state = countDownState; j = 0;}// if displaying the alarm time, menu button is pressed & released, then clock is displayed
-            else {state = setAlarmHourState;} // if displaying the alarm time, menu button is held & released, then alarm hour can be set
-          }
-        break;
-      case setAlarmHourState: // State 2
-        if (menuReleased == true) {state = setAlarmMinState;}
-        else if (advanceMove == 1 && alarmHour >= 23) {alarmHour = 0;}
-        else if (advanceMove == -1 && alarmHour <= 0) {alarmHour = 23;}
-        else if (advanceMove != 0) {alarmHour = alarmHour + advanceMove;}
-        EEPROM.write(alarmHourAddress,alarmHour);
-        advanceMove = 0;
-        break;
-      case setAlarmMinState: // State 3
-        if (menuReleased == true)
-          {
-            state = alarmState;
-            alarmDay = 0;
-            newSecTime = millis();
-          }
-        else if (advanceMove == 1 && alarmMin >= 59) {alarmMin = 0;}
-        else if (advanceMove == -1 && alarmMin <= 0) {alarmMin = 59;}
-        else if (advanceMove != 0) {alarmMin = alarmMin + advanceMove;}
-        EEPROM.write(alarmMinAddress,alarmMin);
-        advanceMove = 0;
-        break;
-      case setClockHourState: // State 4
+
+    case setClockHourState: // State 4
         if (menuReleased == true) {state = setClockMinState;}
         else if (advanceMove == 1 && now.hour() == 23)
           {
