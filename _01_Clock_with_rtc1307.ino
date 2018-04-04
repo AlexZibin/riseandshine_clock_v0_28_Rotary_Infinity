@@ -533,9 +533,9 @@ void alarmDisplay() // Displays the alarm
         // set all LEDs to a dim white
         for (int i = 0; i < numLEDs; i++)
           {
-            leds[i].r = 100;
-            leds[i].g = 100;
-            leds[i].b = 100;
+            findLED(i)->r = 100;
+            findLED(i)->g = 100;
+            findLED(i)->b = 100;
           }
         break;
       case 2:
@@ -545,27 +545,27 @@ void alarmDisplay() // Displays the alarm
           {
             for (int i = 0; i < LEDPosition; i++)
               {
-                leds[(i+LEDOffset)%60].r = 5;
-                leds[(i+LEDOffset)%60].g = 5;
-                leds[(i+LEDOffset)%60].b = 5;
+                findLED(i)->r = 5;
+                findLED(i)->g = 5;
+                findLED(i)->.b = 5;
               }
           }
         if (reverseLEDPosition <= 59 && reverseLEDPosition >= 31)
           {
             for (int i = 59; i > reverseLEDPosition; i--)
               {
-                leds[(i+LEDOffset)%60].r = 5;
-                leds[(i+LEDOffset)%60].g = 5;
-                leds[(i+LEDOffset)%60].b = 5;
+                findLED(i)->r = 5;
+                findLED(i)->g = 5;
+                findLED(i)->b = 5;
               }              
           }
         if (LEDPosition >= 30)
           {
             for (int i = 0; i < numLEDs; i++)
               {
-                leds[(i+LEDOffset)%60].r = 5;
-                leds[(i+LEDOffset)%60].g = 5;
-                leds[(i+LEDOffset)%60].b = 5;
+                findLED(i)->r = 5;
+                findLED(i)->g = 5;
+                findLED(i)->b = 5;
               }           
           }            
         break;
@@ -578,9 +578,9 @@ void alarmDisplay() // Displays the alarm
         Serial.println(LEDBrightness);
         for (int i = 0; i < numLEDs; i++)
           {
-            leds[i].r = LEDBrightness;
-            leds[i].g = LEDBrightness;
-            leds[i].b = LEDBrightness;
+            findLED(i)->r = LEDBrightness;
+            findLED(i)->g = LEDBrightness;
+            findLED(i)->b = LEDBrightness;
           }
         break;
     }
@@ -597,8 +597,11 @@ void countDownDisplay(DateTime now)
         {
           countDownMin = currentCountDown / 60;
           countDownSec = currentCountDown%60 * 4; // have multiplied by 4 to create brightness
-          for (int i = 0; i < countDownMin; i++) {leds[(i+LEDOffset+1)%60].b = 240;} // Set a blue LED for each complete minute that is remaining 
-          leds[(countDownMin+LEDOffset+1)%60].b = countDownSec; // Display the remaining secconds of the current minute as its brightness      
+          for (int i = 0; i < countDownMin; i++) {
+              // Set a blue LED for each complete minute that is remaining 
+              findLED(i+1)->b = 240;
+          } 
+          findLED(i+1)->b = countDownSec; // Display the remaining secconds of the current minute as its brightness      
         }
       else
         {
@@ -607,18 +610,18 @@ void countDownDisplay(DateTime now)
             {
               for (int i = 0; i < numLEDs; i++) // Set the background as all off
                 {
-                  leds[i].r = 0;
-                  leds[i].g = 0;
-                  leds[i].b = 0;
+                  findLED(i)->r = 0;
+                  findLED(i)->g = 0;
+                  findLED(i)->b = 0;
                 }
             }
           else
             {
               for (int i = 0; i < numLEDs; i++) // Set the background as all blue
                 {
-                  leds[i].r = 0;
-                  leds[i].g = 0;
-                  leds[i].b = 255;
+                  findLED(i)->r = 0;
+                  findLED(i)->g = 0;
+                  findLED(i)->b = 255;
                 }
             }
         }
@@ -633,12 +636,19 @@ void countDownDisplay(DateTime now)
           switch (demoIntro)
             {
               case 0:
-                for (int i = 0; i < j; i++) {leds[(i+LEDOffset+1)%60].b = 20;}
-                if (currentMillis - previousMillis > timeInterval) {j++; previousMillis = currentMillis;}
+                for (int i = 0; i < j; i++) {
+                    findLED(i+1)->b = 20;
+                }
+                if (currentMillis - previousMillis > timeInterval) {
+                    j++; 
+                    previousMillis = currentMillis;
+                }
                 if (j == numLEDs) {demoIntro = 1;}
                 break;
               case 1:
-                for (int i = 0; i < j; i++) {leds[(i+LEDOffset+1)%60].b = 20;}
+                for (int i = 0; i < j; i++) {
+                    findLED(i+1)->b = 20;
+                }
                 if (currentMillis - previousMillis > timeInterval) {j--; previousMillis = currentMillis;}
                 if (j < 0) {demoIntro = 0;}
                 break;
@@ -647,7 +657,10 @@ void countDownDisplay(DateTime now)
       else if (countDownTime > 0 && flashTime%300 >= 150)
         {
           countDownMin = currentCountDown / 60; //
-          for (int i = 0; i < countDownMin; i++) {leds[(i+LEDOffset+1)%60].b = 255;} // Set a blue LED for each complete minute that is remaining
+          for (int i = 0; i < countDownMin; i++) {
+              // Set a blue LED for each complete minute that is remaining
+              findLED(i+1)->b = 255;
+          } 
         }
     }
 }
@@ -664,42 +677,44 @@ void runDemo(DateTime now)
         if (currentDemoTime - previousDemoTime > demoTime) {previousDemoTime = currentDemoTime; mode++;}
         break;
       case 1:
-        for (int i = 0; i < j; i++) {leds[i].r = 255;}
+        for (int i = 0; i < j; i++) {
+            findLED(i)->r = 255;
+        }
         if (currentMillis - previousMillis > timeInterval) {j++; previousMillis = currentMillis;}
         if (j == numLEDs) {j = 0; demoIntro++;}
         break;
       case 2:
-        for (int i = j; i < numLEDs; i++) {leds[i].r = 255;}
+        for (int i = j; i < numLEDs; i++) {findLED(i)->r = 255;}
         if (currentMillis - previousMillis > timeInterval) {j++; previousMillis = currentMillis;}
         if (j == numLEDs) {j = 0; demoIntro++;}
         break;
       case 3:
-        for (int i = 0; i < j; i++) {leds[i].g = 255;}
+        for (int i = 0; i < j; i++) {findLED(i)->g = 255;}
         if (currentMillis - previousMillis > timeInterval) {j++; previousMillis = currentMillis;}
         if (j == numLEDs) {j = 0; demoIntro++;}
         break;
       case 4:
-        for (int i = j; i < numLEDs; i++) {leds[i].g = 255;}
+        for (int i = j; i < numLEDs; i++) {findLED(i)->g = 255;}
         if (currentMillis - previousMillis > timeInterval) {j++; previousMillis = currentMillis;}
         if (j == numLEDs) {j = 0; demoIntro++;}
         break;
       case 5:
-        for (int i = 0; i < j; i++) {leds[i].b = 255;}
+        for (int i = 0; i < j; i++) {findLED(i)->b = 255;}
         if (currentMillis - previousMillis > timeInterval) {j++; previousMillis = currentMillis;}
         if (j == numLEDs) {j = 0; demoIntro++;}
         break;
       case 6:
-        for (int i = j; i < numLEDs; i++) {leds[i].b = 255;}
+        for (int i = j; i < numLEDs; i++) {findLED(i)->b = 255;}
         if (currentMillis - previousMillis > timeInterval) {j++; previousMillis = currentMillis;}
         if (j == numLEDs) {j = 0; demoIntro++;}
         break;
       case 7:
-        for (int i = 0; i < j; i++) {leds[i].r = 255; leds[i].g = 255; leds[i].b = 255;}
+        for (int i = 0; i < j; i++) {findLED(i)->r = 255; findLED(i)->g = 255; findLED(i)->b = 255;}
         if (currentMillis - previousMillis > timeInterval) {j++; previousMillis = currentMillis;}
         if (j == numLEDs) {j = 0; demoIntro++;}
         break;
       case 8:
-        for (int i = j; i < numLEDs; i++) {leds[i].r = 255; leds[i].g = 255; leds[i].b = 255;}
+        for (int i = j; i < numLEDs; i++) {findLED(i)->r = 255; findLED(i)->g = 255; findLED(i)->b = 255;}
         if (currentMillis - previousMillis > timeInterval) {j++; previousMillis = currentMillis;}
         if (j == numLEDs)
           {
@@ -714,14 +729,12 @@ void runDemo(DateTime now)
     }
 }
 
-void clearLEDs()
-{      
-  for (int i = 0; i < numLEDs; i++) // Set all the LEDs to off
-    {
-      leds[i].r = 0;
-      leds[i].g = 0;
-      leds[i].b = 0;
-    }
+void clearLEDs() {      
+  for (int i = 0; i < numLEDs; i++) {
+      findLED(i)->r = 0;
+      findLED(i)->g = 0;
+      findLED(i)->b = 0;
+  }
 }
 
 void timeDisplay(DateTime now)
@@ -767,8 +780,8 @@ void minimalClock(DateTime now) {
   uint8_t hourPos = _hourPos (now.hour, now.minute);
   
   findLED(hourPos)->r = 255;
-  leds[(now.minute()+LEDOffset)%60].g = 255;
-  leds[(now.second()+LEDOffset)%60].b = 255;
+  findLED(now.minute)->g = 255;
+  findLED(now.second)->b = 255;
 }
 
 //
@@ -784,13 +797,29 @@ void basicClock(DateTime now) {
   leds[(hourPos+LEDOffset+1)%60].r = 255;
   leds[(hourPos+LEDOffset+1)%60].g = 0;
   leds[(hourPos+LEDOffset+1)%60].b = 0;
-  leds[(now.minute()+LEDOffset)%60].r = 0;
-  leds[(now.minute()+LEDOffset)%60].g = 255;
-  leds[(now.minute()+LEDOffset)%60].b = 0;  
-  leds[(now.second()+LEDOffset)%60].r = 0;
-  leds[(now.second()+LEDOffset)%60].g = 0;
-  leds[(now.second()+LEDOffset)%60].b = 255;
+
+   // Hour (9 lines of code)
+          findLED(hourPos-1)->r = 30
+          findLED(hourPos-1)->g =   0;
+          findLED(hourPos-1)->b =   0;
+
+          findLED(hourPos+1)->r = 30
+          findLED(hourPos+1)->g =   0;
+          findLED(hourPos+1)->b =   0;
+
+          findLED(hourPos)->r = 190
+          findLED(hourPos)->g = 0;
+          findLED(hourPos)->b = 0;
   
+  // Minute  
+          findLED(now.minute)->r = 0;
+          findLED(now.minute)->g = 255;
+          findLED(now.minute)->b = 0;
+    
+  // Second  
+          findLED(now.second)->r = 0;
+          findLED(now.second)->g = 0;
+          findLED(now.second)->b = 255;
 }
 
 // 
