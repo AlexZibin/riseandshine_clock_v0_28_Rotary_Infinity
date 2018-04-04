@@ -14,13 +14,17 @@
 
 RTC_DS1307 RTC; // Establishes the chipset of the Real Time Clock
 
+// Pin definitions:
+#define rotaryeft 4
+#define rotaryRight 5
 #define LEDStripPin 9 // Pin used for the data to the LED strip
-#define menuPin 7 // Pin used for the menu button (green stripe)
+#define menuPin 2 // Arduino Pro Mini supports external interrupts only on pins 2 and 3
+#define startingLEDs 4 // Number of LEDs BEFORE the strip
 #define numLEDs 60 // Number of LEDs in strip
 
 // Setting up the LED strip
 struct CRGB leds[numLEDs];
-Encoder rotary1(3, 4); // Setting up the Rotary Encoder
+Encoder rotary1(rotaryLeft, rotaryRight); // Setting up the Rotary Encoder
 #define ROTARY_TICKS 4
 
 DateTime old; // Variable to compare new and old time, to see if it has moved on.
