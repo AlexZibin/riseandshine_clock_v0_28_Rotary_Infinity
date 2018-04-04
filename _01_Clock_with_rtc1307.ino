@@ -14,6 +14,7 @@ RTC_DS1307 RTC; // Establishes the chipset of the Real Time Clock
 #define rotaryRight 5
 #define LEDStripPin 9 // Pin used for the data to the LED strip
 #define menuPin 2 // Arduino Pro Mini supports external interrupts only on pins 2 and 3
+#define reedSwitchPin 3 // Switches off the display to reduce power consumption (before re-flashing)
 
 #define startingLEDs 4 // Number of backlight LEDs BEFORE the strip
 #define numLEDs 60 // Number of LEDs in strip
