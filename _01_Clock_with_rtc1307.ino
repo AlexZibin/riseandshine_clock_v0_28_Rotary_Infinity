@@ -565,48 +565,6 @@ void alarmDisplay() // Displays the alarm
             leds[i].b = LEDBrightness;
           }
         break;
-
-// Currently not working        
-//      case 4:
-//        fadeTime = 60000;
-//        brightFadeRad = (millis() - alarmTrigTime)/fadeTime; // Divided by the time period of the fade up.
-//        LEDPosition = ((millis() - alarmTrigTime)/(fadeTime/30));
-////        if (millis() > alarmTrigTime + fadeTime) LEDBrightness = 255; // If the fade time is complete, then the LED brightness will be set to full.
-//        if (brightFadeRad <= 0) LEDBrightness = 0;
-//        else if (brightFadeRad >= 0) LEDBrightness = 1;
-//        else LEDBrightness = 255.0*(1.0+sin((1.57*brightFadeRad)-1.57));
-//        
-////        Serial.println(brightFadeRad);
-////        Serial.println(LEDBrightness);
-//        reverseLEDPosition = 60 - LEDPosition;
-//        if (LEDPosition >= 0 && LEDPosition <= 29)
-//          {
-//            for (int i = 0; i < LEDPosition; i++)
-//              {
-//                leds[i].r = LEDBrightness;
-//                leds[i].g = LEDBrightness;
-//                leds[i].b = LEDBrightness;
-//              }
-//          }
-//        if (reverseLEDPosition <= 59 && reverseLEDPosition >= 31)
-//          {
-//            for (int i = 59; i > reverseLEDPosition; i--)
-//              {
-//                leds[i].r = LEDBrightness;
-//                leds[i].g = LEDBrightness;
-//                leds[i].b = LEDBrightness;
-//              }              
-//          }
-//        if (LEDPosition >= 30)
-//          {
-//            for (int i = 0; i < numLEDs; i++)
-//              {
-//                leds[i].r = LEDBrightness;
-//                leds[i].g = LEDBrightness;
-//                leds[i].b = LEDBrightness;
-//              }           
-//          }  
-//        break;
     }
 }
 
@@ -786,8 +744,9 @@ void timeDisplay(DateTime now)
 // Add each of the new display mode functions as a new "case", leaving default last.
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t _hourPos (DateTime now) {
-  return (now.hour()%12)*5 + (now.minute()+6)/12;
+uint8_t _hourPos (uint8_t hour, uint8_t minute) { // which LED corresponds to this time, in [0..59] range
+  uint8_t _hp = (hour%12)*5 + (minute+6)/12;
+  return (_hp == 60) ? 0 : _hp;
 }
 
 //
