@@ -124,10 +124,10 @@ void setup() {
   pinMode(menuPin, INPUT_PULLUP); 
     
   // Start LEDs
-  LEDS.addLeds<WS2811, LEDStripPin, GRB>(leds, startingLEDs+numLEDs); 
+  LEDS.addLeds<WS2811, LEDStripPin, GRB>(_leds, startingLEDs+numLEDs); 
   
   // Start RTC
-  Wire.begin(); // Starts the Wire library allows I2C communication to the Real Time Clock
+  Wire.begin(); // Arduino Ptro Mini i2c: SDA = A4, SCL = A5.
   RTC.begin(); // Starts communications to the RTC
   
   Serial.begin(9600); // Starts the serial communications
@@ -152,11 +152,6 @@ void setup() {
 
   // create a loop that calcuated the number of counted milliseconds between each second.
   DateTime now = RTC.now();
-  //  startTime = millis();  
-  //  while (RTC.old() = RTC.new())
-  
-  //  if (now.month() == 1 && now.day() == 1 && now.hour() == 0 && now.minute() == 0 && now.minute() == 0)
-  //    {}
       
   Serial.print("Hour time is... ");
   Serial.println(now.hour());
@@ -173,9 +168,7 @@ void setup() {
   Serial.println(now.day());
 }
 
-
-void loop()
-{
+void loop() {
   DateTime now = RTC.now(); // Fetches the time from RTC
   
   // Check for any button presses and action accordingley
@@ -196,7 +189,7 @@ void loop()
   if (menuButton == true || advanceMove != 0 || countTime == true) {buttonCheck(menuBouncer,now);}
   
   // clear LED array
-  memset(leds, 0, numLEDs * 3);
+  clearLEDs();
   
   // Check alarm and trigger if the time matches
   if (alarmSet == true && alarmDay != now.day()) // The alarmDay statement ensures it is a newly set alarm or repeat from previous day, not within the minute of an alarm cancel.
@@ -425,46 +418,31 @@ void buttonCheck(Bounce menuBouncer, DateTime now)
   Serial.println(state);
 }
 
-void setAlarmDisplay()
-{
+void setAlarmDisplay() {
 
-  for (int i = 0; i < numLEDs; i++)
-    {
-      fiveMins = i%5;
-      if (fiveMins == 0)
-        {
-          leds[i].r = 100;
-          leds[i].g = 100;
-          leds[i].b = 100;
-        }
-    }
+  for (int i = 0; i < numLEDs; i+=5) {
+      findLED(i)->r = 100;
+      findLED(i)->g = 100;
+      findLED(i)->b = 100;
+  }
 
-  if (alarmSet == 0)
-    {
-      for (int i = 0; i < numLEDs; i++) // Sets background to red, to state that alarm IS NOT set
+  if (alarmSet == 0) {
+      for (int i = 0; i < numLEDs; i+=5) { // Sets background to red, to state that alarm IS NOT set
+        findLED(i)->r = 20;
+        findLED(i)->g = 0;
+        findLED(i)->b = 0;
+      }     
+  } else {
+      for (int i = 0; i < numLEDs; i+=5) // Sets background to green, to state that alarm IS set
         {
-          fiveMins = i%5;
-          if (fiveMins == 0)
             {
-              leds[i].r = 20;
-              leds[i].g = 0;
-              leds[i].b = 0;
+              findLED(i)->r = 0;
+              findLED(i)->g = 20;
+              findLED(i)->b = 0;
             }  
         }     
-    }
-  else
-    {
-      for (int i = 0; i < numLEDs; i++) // Sets background to green, to state that alarm IS set
-        {
-          fiveMins = i%5;
-          if (fiveMins == 0)
-            {
-              leds[i].r = 0;
-              leds[i].g = 20;
-              leds[i].b = 0;
-            }  
-        }     
-    }
+  }
+  
   if (alarmHour <= 11)
     {
       leds[(alarmHour*5+LEDOffset)%60].r = 255;
