@@ -1,16 +1,11 @@
-// https://sourceforge.net/projects/riseandshineledclock/files/
-// Add options for background settings
-// TO DO: Clean up and comment code...
-// BUG: demo state should start as mode 0 after intro
-// NICE TO HAVE: When alarm is cancelled, the alarm still remains set for next day.
+// original code: https://sourceforge.net/projects/riseandshineledclock/files/
 
-//Add the following libraries to the respective folder for you operating system. See http://arduino.cc/en/Guide/Environment
-#include <FastLED.h> // FastSPI Library from http://code.google.com/p/fastspi/
-#include <Wire.h> //This is to communicate via I2C. On arduino Uno & Nano use pins A4 for SDA (yellow/orange) and A5 for SCL (green). For other boards ee http://arduino.cc/en/Reference/Wire
+#include <FastLED.h>  
+#include <Wire.h>  // I2C: On Arduino Uno & Nano & ProMini use pins A4 for SDA (yellow/orange) and A5 for SCL (green). For other boards ee http://arduino.cc/en/Reference/Wire
 #include <RTClib.h>           // Include the RTClib library to enable communication with the real time clock.
-#include <EEPROM.h>           // Include the EEPROM library to enable the storing and retrevel of settings.
+#include <EEPROM.h>           // Include the EEPROM library to enable the storing and retrieval of settings.
 #include <Bounce.h>           // Include the Bounce library for de-bouncing issues with push buttons.
-#include <Encoder.h>          // Include the Encoder library to read the out puts of the rotary encoders
+#include <Encoder.h>          // Include the Encoder library to read the outputs of the rotary encoders
 
 RTC_DS1307 RTC; // Establishes the chipset of the Real Time Clock
 
@@ -53,18 +48,29 @@ boolean swingBack = false;
 int timeHour;
 int timeMin;
 int timeSec;
-int alarmMin; // The minute of the alarm  
-int alarmHour; // The hour of the alarm 0-23
-int alarmDay = 0; // The day of the alarm
-boolean alarmSet; // Whether the alarm is set or not
 
-#define modeAddress  0 // Address of where mode is stored in the EEPROM
-#define alarmMinAddress 1 // Address of where alarm minute is stored in the EEPROM
-#define alarmHourAddress 2 // Address of where alarm hour is stored in the EEPROM
-#define alarmSetAddress 3 // Address of where alarm state is stored in the EEPROM
-#define alarmModeAddress 4 // Address of where the alarm mode is stored in the EEPROM
-#define magicValAddress 5
-#define magicVal 0x3B
+//////////////
+// EEPROM section:
+    int mode = 0; // Variable of the display mode of the clock
+    #define modeMax 6 // Change this when new modes are added. This is so selecting modes can go back beyond.
+
+    uint8_t alarmMin = 0; // The minute of the alarm  
+    uint8_t alarmHour = 0; // The hour of the alarm 0-23
+    uint8_t alarmDay = 0; // The day of the alarm
+    boolean alarmSet = false; // Whether the alarm is set or not
+
+    int alarmMode = 0; // Variable of the alarm display mode
+    int alarmModeMax = 3;
+
+    #define modeAddress 0 // Address of where mode is stored in the EEPROM
+    #define alarmMinAddress 1 // Address of where alarm minute is stored in the EEPROM
+    #define alarmHourAddress 2 // Address of where alarm hour is stored in the EEPROM
+    #define alarmSetAddress 3 // Address of where alarm state is stored in the EEPROM
+    #define alarmModeAddress 4 // Address of where the alarm mode is stored in the EEPROM
+    #define magicValAddress 5
+    #define magicVal 0x3B
+// End EEPROM section :)
+///////////////////////
 
 boolean alarmTrig = false; // Whether the alarm has been triggered or not
 long alarmTrigTime; // Milli seconds since the alarm was triggered
@@ -94,10 +100,6 @@ int state = 0; // Variable of the state of the clock, with the following defined
 #define setClockSecState 6
 #define countDownState 7
 #define demoState 8
-int mode = 0; // Variable of the display mode of the clock
-int modeMax = 6; // Change this when new modes are added. This is so selecting modes can go back beyond.
-int alarmMode=0; // Variable of the alarm display mode
-int alarmModeMax = 3;
 
 Bounce menuBouncer = Bounce(menuPin,20); // Instantiate a Bounce object with a 50 millisecond debounce time for the menu button
 boolean menuButton = false; 
@@ -143,9 +145,9 @@ void setup() {
   // Load any saved setting since power off, such as mode & alarm time  
   if (EEPROM.read(magicValAddress) == magicVal) {
     mode = EEPROM.read(modeAddress); // The mode will be stored in the address "0" of the EEPROM
-    alarmMin = EEPROM.read(alarmMinAddress); // The mode will be stored in the address "1" of the EEPROM
-    alarmHour = EEPROM.read(alarmHourAddress); // The mode will be stored in the address "2" of the EEPROM
-    alarmSet = EEPROM.read(alarmSetAddress); // The mode will be stored in the address "2" of the EEPROM
+    alarmMin = EEPROM.read(alarmMinAddress); 
+    alarmHour = EEPROM.read(alarmHourAddress); 
+    alarmSet = EEPROM.read(alarmSetAddress); 
     alarmMode = EEPROM.read(alarmModeAddress);
     // Prints all the saved EEPROM data to Serial
     Serial.print("Mode is ");Serial.println(mode);
@@ -156,6 +158,12 @@ void setup() {
   } else
     Serial.print("EEPROM was empty. Writing magicVal to it.");
     EEPROM.write(magicValAddress, magicVal);
+  
+    EEPROM.write(modeAddress, mode); // The mode will be stored in the address "0" of the EEPROM
+    EEPROM.write(alarmMinAddress, alarmMin); 
+    EEPROM.write(alarmHourAddress, alarmHour); 
+    EEPROM.write(alarmSetAddress, alarmSet); 
+    EEPROM.write(alarmModeAddress, alarmMode);
   }
 
   // create a loop that calcuated the number of counted milliseconds between each second.
