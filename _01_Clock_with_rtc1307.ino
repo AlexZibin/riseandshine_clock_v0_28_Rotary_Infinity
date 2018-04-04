@@ -443,16 +443,13 @@ void setAlarmDisplay() {
         }     
   }
   
-  if (alarmHour <= 11)
-    {
-      leds[(alarmHour*5+LEDOffset)%60].r = 255;
-    }
-  else
-    {
-      leds[((alarmHour - 12)*5+LEDOffset+59)%60].r = 25;    
-      leds[((alarmHour - 12)*5+LEDOffset)%60].r = 255;
-      leds[((alarmHour - 12)*5+LEDOffset+1)%60].r = 25;
-    }
+  if (alarmHour <= 11) {
+      findLED(_hourPos(alarmHour, alarmMin))->.r = 255;
+  } else {
+      findLED(_hourPos(alarmHour, alarmMin))->.r = 255;
+      findLED(_hourPos(alarmHour, alarmMin)-1)->.r = 30;
+      findLED(_hourPos(alarmHour, alarmMin)+1)->.r = 30;
+  }
   leds[(alarmMin+LEDOffset)%60].g = 100;
   flashTime = millis();
   if (state == setAlarmHourState && flashTime%300 >= 150)
