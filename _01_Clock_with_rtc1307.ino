@@ -77,7 +77,6 @@ int mode; // Variable of the display mode of the clock
 
 Bounce menuBouncer = Bounce(menuPin,20); // Instantiate a Bounce object with a 50 millisecond debounce time for the menu button
 boolean menuButton = false; 
-boolean menuPressed = false;
 boolean menuReleased = false;
 int advanceMove = 0;
 boolean countTime = false;
@@ -182,7 +181,6 @@ void buttonCheck(Bounce menuBouncer, DateTime now)
       Serial.println("rising edge");
     } // if so sets countTime to false. Now the ...TimePressed will not be updated when enters the buttonCheck,
   menuReleased = menuBouncer.risingEdge();
-  if (menuPressed == true) {Serial.println("Menu Button Pressed");}
   if (menuReleased == true) {Serial.println("Menu Button Released");}
   Serial.print("Menu Bounce Duration ");
   Serial.println(menuTimePressed);
