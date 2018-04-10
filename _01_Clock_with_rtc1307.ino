@@ -887,8 +887,8 @@ void minimalMilliSec(DateTime now)
   subSeconds = (((millis() - newSecTime)*60)/cyclesPerSec)%60;  // This divides by 733, but should be 1000 and not sure why???
 
   // Millisec lights are set first, so hour/min/sec lights override and don't flicker as millisec passes
-          findLED(subSeconds)->r = 50;
-          findLED(subSeconds)->g = 50;
+          findLED(subSeconds)->r = 30;
+          findLED(subSeconds)->g = 30;
           findLED(subSeconds)->b = 50;
 
   // The colours are set last, so if on same LED mixed colours are created
@@ -899,6 +899,8 @@ void minimalMilliSec(DateTime now)
   
   // Minute  
           findLED(now.minute())->g = 255;
+  // Second  FIXED
+          findLED(now.second())->b = 200;
 }
 
 // Pendulum will be at the bottom and left for one second and right for one second
@@ -941,10 +943,9 @@ void simplePendulum(DateTime now)
           findLED(now.second())->b = 255;
 }
 
-void breathingClock(DateTime now)
-{
+void breathingClock(DateTime now) {
   if (alarmTrig == false) {
-      breathBrightness = 15.0*(1.0+sin((3.14*millis()/2000.0)-1.57));
+      breathBrightness = 15.0*(1.0+sin((3.14*(millis()%86400000)/2000.0)-1.57));
       for (int i = 0; i < numLEDs; i++) {
           fiveMins = i%5;
           if (fiveMins == 0) {
