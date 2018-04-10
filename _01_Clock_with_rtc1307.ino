@@ -12,7 +12,7 @@ RTC_DS1307 RTC; // Establishes the chipset of the Real Time Clock
 // Pin definitions:
     #define rotaryLeft 4
     #define rotaryRight 5
-    #define LEDStripPin 9 // Data pin
+    #define LEDStripPin 3 // Data pin
     #define menuPin 2 // Arduino Pro Mini supports external interrupts only on pins 2 and 3
     #define reedSwitchPin 3 // Switches off the display to reduce power consumption (before re-flashing)
 // Arduino Pro Mini i2c: SDA = A4, SCL = A5.    
@@ -887,8 +887,8 @@ void minimalMilliSec(DateTime now)
   subSeconds = (((millis() - newSecTime)*60)/cyclesPerSec)%60;  // This divides by 733, but should be 1000 and not sure why???
 
   // Millisec lights are set first, so hour/min/sec lights override and don't flicker as millisec passes
-          findLED(subSeconds)->r = 30;
-          findLED(subSeconds)->g = 30;
+          findLED(subSeconds)->r = 50;
+          findLED(subSeconds)->g = 50;
           findLED(subSeconds)->b = 50;
 
   // The colours are set last, so if on same LED mixed colours are created
@@ -899,6 +899,7 @@ void minimalMilliSec(DateTime now)
   
   // Minute  
           findLED(now.minute())->g = 255;
+  
   // Second  FIXED
           findLED(now.second())->b = 200;
 }
@@ -976,8 +977,53 @@ void breathingClock(DateTime now) {
 
 void backlightLEDs (void) {
   for (int i = 0; i < startingLEDs; i++) {
-    _leds[i].r = 0;
-    _leds[i].g = 155;
-    _leds[i].b = 0;
+    _leds[i].r = 30;
+    _leds[i].g = 255;
+    _leds[i].b = 80;
   }
 }
+
+/*
+// Cycle through the color wheel, equally spaced around the belt
+void rainbowCycle(uint8_t wait)
+{
+  uint16_t i, j;
+  for (j=0; j < 384 * 5; j++)
+    {     // 5 cycles of all 384 colors in the wheel
+      for (i=0; i < numLEDs; i++)
+        {
+          // tricky math! we use each pixel as a fraction of the full 384-color
+          // wheel (thats the i / strip.numPixels() part)
+          // Then add in j which makes the colors go around per pixel
+          // the % 384 is to make the wheel cycle around
+          strip.setPixelColor(i, Wheel(((i * 384 / numLEDs) + j) % 384));
+        }
+      delay(wait);
+    }
+}
+//Input a value 0 to 384 to get a color value.
+//The colours are a transition r - g - b - back to r
+uint32_t Wheel(uint16_t WheelPos)
+{
+  byte r, g, b;
+  switch(WheelPos / 128)
+  {
+    case 0:
+      r = 127 - WheelPos % 128; // red down
+      g = WheelPos % 128;       // green up
+      b = 0;                    // blue off
+      break;
+    case 1:
+      g = 127 - WheelPos % 128; // green down
+      b = WheelPos % 128;       // blue up
+      r = 0;                    // red off
+      break;
+    case 2:
+      b = 127 - WheelPos % 128; // blue down
+      r = WheelPos % 128;       // red up
+      g = 0;                    // green off
+      break;
+  }
+  return(strip.Color(r,g,b));
+}
+*/
