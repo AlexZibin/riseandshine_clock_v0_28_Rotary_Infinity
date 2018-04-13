@@ -143,9 +143,6 @@ void setup() {
   Serial.println("\n\n");
   Serial.println(__FILE__);
 
-  // sanity check delay - allows reprogramming if accidently blowing power w/leds
-  delay(2000);
-
   // Start LEDs
   LEDS.addLeds<WS2811, LEDStripPin, GRB>(_leds, startingLEDs+numLEDs); 
   LEDS.clear(true);
@@ -198,6 +195,9 @@ void setup() {
     EEPROM.write(alarmSetAddress, alarmSet); 
     EEPROM.write(alarmModeAddress, alarmMode);
   };
+
+  // sanity check delay - allows reprogramming if accidently blowing power w/leds
+  delay(2000);
 }
 
 void loop() {
@@ -945,7 +945,7 @@ void simplePendulum(DateTime now)
 }
 
 void breathingClock(DateTime now) {
-  if (alarmTrig == false) {
+  //if (alarmTrig == false) {
       breathBrightness = 15.0*(1.0+sin((3.14*(millis()%86400000)/2000.0)-1.57));
       for (int i = 0; i < numLEDs; i++) {
           fiveMins = i%5;
@@ -959,7 +959,7 @@ void breathingClock(DateTime now) {
               findLED(i)->b = 0;
           }
        }
-  }
+  //}
   
   uint8_t hourPos = _hourPos (now.hour(), now.minute());
 
