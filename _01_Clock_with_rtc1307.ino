@@ -122,7 +122,7 @@ int odd;
 // CONVERSIONS
         // Which LED (in [0..59] range) corresponds to given hh:mm time 
         uint8_t _hourPos (int hour, int minute) { 
-          while (hour < 0) { // Foolprof check :)
+          while (hour < 0) { // Foolproof check :)
               hour += 12;
           }
           uint8_t _hp = (hour%12)*5 + (minute+6)/12;
@@ -132,7 +132,7 @@ int odd;
         // Which offset (in [4..63] range) corresponds to given [0..59] mm time 
         // First [0..3] offsets are reserved for backlight LEDs
         struct CRGB* findLED (int minute) {
-          while (minute < 0) {  // Foolprof check :)
+          while (minute < 0) {  // Foolproof check :)
               minute += numLEDs;
           }
           return &_leds[(LEDOffset+minute)%numLEDs+startingLEDs];
