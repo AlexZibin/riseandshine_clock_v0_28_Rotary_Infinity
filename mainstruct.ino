@@ -101,7 +101,7 @@ void modeChanger::callCurrModeFunc (void) {
 // end modeChanger.h
 /**/
 
-void (*modeFuncArray[])(void) = {&f1, &f2, &f3);
+void (*modeFuncArray[])(void) = {f1, f2, f3);
 const int numModes = sizeof(modeFunc)/sizeof(modeFunc)/sizeof(modeFunc[0]);
 
 int currMode (void) {
@@ -129,7 +129,7 @@ void initDevices (void) {
 
 void readEEPROM (void) {}
 
-void fColorDemo1 (void) {
+void fColorDemo10sec (void) {
   static unsigned long millisAtStart;
   
   Serial.println ("Mode: fDemo1");
@@ -142,7 +142,7 @@ void fColorDemo1 (void) {
   
   if (secondsPassed (10)) {
     Serial.println ("Timeout: 10 secondsPassed; Applying mode f1");
-    applyMode (&f1);
+    applyMode (f1);
   }
   else {
   }
