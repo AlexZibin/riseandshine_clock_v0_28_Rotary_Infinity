@@ -22,12 +22,21 @@ void f3 (void) {
   Serial.println ("Mode: f3");
 }
 
-/*class modeChanger {
+/*
+// массив указателей на функции:
+// typedef ........
+
+class modeChanger {
   public:
+    void modeChanger ();
+    int currMode (void);
+    int nextMode (void);
+    int prevMode (void);
+    int applyMode (void *newModeFunc(void));
   private:
 }*/
 
-void (*modeFunc[])(void) = {&f1, &f2, &f3);
+void (*modeFuncArray[])(void) = {&f1, &f2, &f3);
 const int numModes = sizeof(modeFunc)/sizeof(modeFunc)/sizeof(modeFunc[0]);
 
 unsigned int currMode (void) {
@@ -59,8 +68,8 @@ void fColorDemo1 (void) {
   Serial.println ("Mode: fDemo1");
   
   if (secondsPassed (10)) {
-    Serial.println ("Switching mode to f1;");
-    switchMode (&f1);
+    Serial.println ("Applying mode f1");
+    applyMode (&f1);
   }
   else {
   }
