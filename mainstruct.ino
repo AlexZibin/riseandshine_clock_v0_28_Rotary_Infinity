@@ -1,6 +1,6 @@
 
 void f1 (void) {
-  Serial.println ("f1");
+  Serial.println ("Mode: f1");
   
   /*
   if (turnLeft ()) {
@@ -15,12 +15,17 @@ void f1 (void) {
 }
 
 void f2 (void) {
-  Serial.println ("f2");
+  Serial.println ("Mode: f2");
 }
 
 void f3 (void) {
-  Serial.println ("f3");
+  Serial.println ("Mode: f3");
 }
+
+/*class modeChanger {
+  public:
+  private:
+}*/
 
 void (*modeFunc[])(void) = {&f1, &f2, &f3);
 const int numModes = sizeof(modeFunc)/sizeof(modeFunc)/sizeof(modeFunc[0]);
@@ -49,3 +54,15 @@ void initDevices (void) {
 }
 
 void readEEPROM (void) {}
+
+void fColorDemo1 (void) {
+  Serial.println ("Mode: fDemo1");
+  
+  if (secondsPassed (10)) {
+    Serial.println ("Switching mode to f1;");
+    switchMode (&f1);
+  }
+  else {
+  }
+}
+
