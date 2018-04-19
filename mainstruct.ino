@@ -23,7 +23,7 @@ void f3 (void) {
 }
 
 /*
-// modeChanger.h
+// begin modeChanger.h
 // массив указателей на функции:
 // typedef modeFuncArrayPtr ........
 
@@ -35,7 +35,7 @@ class modeChanger {
     int prevMode (void);
     int applyMode (void *newModeFunc(void));
   private:
-    int _currMode;
+    int _currMode = -1; // -1 is an indication of an error (error reporting isnt implemented in depth yet);
     unsigned int _numModes;
     modeFuncArrayPtr _funcArray;
 }
@@ -46,6 +46,17 @@ void modeChanger::modeChanger (modeFuncArrayPtr funcArray, unsigned int numModes
   _numModes = numModes;
 }
 
+int applyMode (void *newModeFunc(void)) {
+  _currMode = -1; // -1 is an indication of an error
+  for (int i = 0; i++; i < _numModes) {
+      // compare two pointers
+      if (newModeFunc == _funcArray[i]) {
+          _currMode = i;
+      }
+  }
+}
+
+// end modeChanger.h
 */
 
 void (*modeFuncArray[])(void) = {&f1, &f2, &f3);
