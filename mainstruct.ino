@@ -35,22 +35,32 @@ class modeChanger {
     int prevMode (void);
     int applyMode (void *newModeFunc(void));
     void callCurrModeFunc (void);
+    bool modeJustChanged (void);
   private:
-    int _currMode = -1; // -1 is an indication of an error (error reporting isnt implemented in depth yet);
-    unsigned int _numModes;
-    modeFuncArrayPtr _funcArray;
+    int _currMode = -1; // -1 is an indication of an error (index out of range; -1 = array not initialized; -2 = function not found; etc);
+    int _prevMode = -100;
+    unsigned int _numModes = -1;
+    modeFuncArrayPtr _funcArray = NULL;
+}
+
+bool modeChanger::modeJustChanged (void) {
+    if (_prevMode != _currMode) {
+        _prevMode = _currMode;
+        return true;
+    }
+    return false;
 }
 
 void modeChanger::modeChanger (modeFuncArrayPtr funcArray, unsigned int numModes) {
-  _currMode = 0;
-  _funcArray = _funcArray;
+  _currMode (0);
+  _funcArray = funcArray;
   _numModes = numModes;
 }
 
 int modeChanger::currMode (void) { return _currMode; }
 
 int modeChanger::nextMode (void) {
-    if (_currMode > -1 ) { // Negative stands for some error
+    if (_currMode > -1) { // Negative stands for some error
         if (++_currMode == _numModes) { // Close the circle
             _currMode = 0;
         }
@@ -59,7 +69,7 @@ int modeChanger::nextMode (void) {
 }
 
 int modeChanger::prevMode (void) {
-    if (_currMode > -1 ) { // Negative stands for some error
+    if (_currMode > -1) { // Negative stands for some error
         if (--_currMode == -1) { // Close the circle backwards
             _currMode = _numModes;
         }
@@ -68,7 +78,7 @@ int modeChanger::prevMode (void) {
 }
 
 int modeChanger::applyMode (void *newModeFunc(void)) {
-    _currMode = -1; // -1 is an indication of an error
+    _currMode = -2; // negative value is an indication of an error
     for (int i = 0; i++; i < _numModes) {
         // compare two pointers
         if (newModeFunc == _funcArray[i]) {
@@ -120,7 +130,15 @@ void initDevices (void) {
 void readEEPROM (void) {}
 
 void fColorDemo1 (void) {
+  static unsigned long millisAtStart;
+  
   Serial.println ("Mode: fDemo1");
+  
+  /* */
+  if (modeJustChanged()) {
+      millisAtStart = millis ();
+  }
+  /* */
   
   if (secondsPassed (10)) {
     Serial.println ("Timeout: 10 secondsPassed; Applying mode f1");
