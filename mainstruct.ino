@@ -22,7 +22,7 @@ void f3 (void) {
   Serial.println ("Mode: f3");
 }
 
-/*
+/* */
 // begin modeChanger.h
 // массив указателей на функции:
 // typedef modeFuncArrayPtr ........
@@ -99,7 +99,7 @@ void modeChanger::callCurrModeFunc (void) {
 }
 
 // end modeChanger.h
-*/
+/**/
 
 void (*modeFuncArray[])(void) = {&f1, &f2, &f3);
 const int numModes = sizeof(modeFunc)/sizeof(modeFunc)/sizeof(modeFunc[0]);
@@ -148,3 +148,18 @@ void fColorDemo1 (void) {
   }
 }
 
+bool secondsPassed (unsigned int seconds) {
+  static bool countdownIsRunning = false;
+  static unsigned long savedMillisec;
+  
+  if (!countdownIsRunning) { 
+      countdownIsRunning = true; 
+      savedMillisec = millis ();
+  }
+  if ((millis () - savedMillisec)/1000UL >= seconds) {
+      countdownIsRunning = false;
+      return true;
+  }
+  return false;
+}
+                                 
