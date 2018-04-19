@@ -91,7 +91,7 @@ void fColorDemo1 (void) {
   Serial.println ("Mode: fDemo1");
   
   if (secondsPassed (10)) {
-    Serial.println ("Applying mode f1");
+    Serial.println ("Timeout: 10 secondsPassed; Applying mode f1");
     applyMode (&f1);
   }
   else {
