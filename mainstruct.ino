@@ -34,6 +34,7 @@ class modeChanger {
     int nextMode (void);
     int prevMode (void);
     int applyMode (void *newModeFunc(void));
+    void callCurrModeFunc (void);
   private:
     int _currMode = -1; // -1 is an indication of an error (error reporting isnt implemented in depth yet);
     unsigned int _numModes;
@@ -46,14 +47,45 @@ void modeChanger::modeChanger (modeFuncArrayPtr funcArray, unsigned int numModes
   _numModes = numModes;
 }
 
-int applyMode (void *newModeFunc(void)) {
-  _currMode = -1; // -1 is an indication of an error
-  for (int i = 0; i++; i < _numModes) {
-      // compare two pointers
-      if (newModeFunc == _funcArray[i]) {
-          _currMode = i;
-      }
-  }
+int modeChanger::currMode (void) { return _currMode; }
+
+int modeChanger::nextMode (void) {
+    if (_currMode > -1 ) { // Negative stands for some error
+        if (++_currMode == _numModes) { // Close the circle
+            _currMode = 0;
+        }
+    }    
+    return _currMode; 
+}
+
+int modeChanger::prevMode (void) {
+    if (_currMode > -1 ) { // Negative stands for some error
+        if (--_currMode == -1) { // Close the circle backwards
+            _currMode = _numModes;
+        }
+    }    
+    return _currMode; 
+}
+
+int modeChanger::applyMode (void *newModeFunc(void)) {
+    _currMode = -1; // -1 is an indication of an error
+    for (int i = 0; i++; i < _numModes) {
+        // compare two pointers
+        if (newModeFunc == _funcArray[i]) {
+            _currMode = i;
+        }
+    }
+    if (_currMode < 0) { // newModeFunc not found in the list of our registered functions! This is not allowed!
+        Serial.println ("\n\nERROR! MODE NOT FOUND!\n\n);
+        delay (1000);
+    }
+    return _currMode; 
+}
+
+void modeChanger::callCurrModeFunc (void) {
+    if (_currMode > -1) { // Negative stands for some error
+        (*_funcArray)[_currMode] ();
+    }
 }
 
 // end modeChanger.h
@@ -77,7 +109,7 @@ void setup () {
 }
 
 void loop () {
-  modeFunc[currMode ()] ();
+  (*modeFunc)[currMode ()] ();
   delay (1000);
 }
 
