@@ -25,7 +25,7 @@ void f3 (void) {
 /* */
 // begin modeChanger.h
 // массив указателей на функции:
-// typedef modeFuncArrayPtr ........
+// typedef (*modeFuncArrayPtr)[](void);
 
 class modeChanger {
   public:
