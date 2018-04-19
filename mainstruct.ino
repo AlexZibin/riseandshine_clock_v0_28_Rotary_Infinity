@@ -25,7 +25,7 @@ void f3 (void) {
 /* */
 // begin modeChanger.h
 // массив указателей на функции:
-// typedef (*modeFuncArrayPtr)[](void);
+typedef void (*modeFuncArrayPtr)[](void);
 
 class modeChanger {
   public:
@@ -101,8 +101,9 @@ void modeChanger::callCurrModeFunc (void) {
 // end modeChanger.h
 /**/
 
-void (*modeFuncArray[])(void) = {f1, f2, f3);
-const int numModes = sizeof(modeFunc)/sizeof(modeFunc)/sizeof(modeFunc[0]);
+//void (*modeFuncArray[])(void) = {f1, f2, f3);
+static modeFuncArrayPtr modeFuncArray[] {f1, f2, f3, fColorDemo10sec);
+const int numModes = sizeof(modeFuncArray)/sizeof(modeFuncArray[0]);
 
 int currMode (void) {
   static int i = 0;
@@ -119,7 +120,7 @@ void setup () {
 }
 
 void loop () {
-  (*modeFunc)[currMode ()] ();
+  (*modeFuncArray)[currMode ()] ();
   delay (1000);
 }
 
