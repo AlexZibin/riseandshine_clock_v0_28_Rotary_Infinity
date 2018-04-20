@@ -58,3 +58,46 @@ int main() {
 	return 0;
 }
 */
+
+/* Really works thanos to stackowerflow:
+#include <iostream>
+
+void f1 (void) {
+  std::cout << "f1" << "\n";
+}
+
+void f2 (void) {
+  std::cout << "f2" << "\n";
+}
+
+typedef void (*fPtr)(void); // simple "[]" gets the compile error
+
+class modeChanger {
+  public:
+    modeChanger (fPtr *funcArray);
+    void op ();
+  private:
+    fPtr *_funcArray;
+};
+
+modeChanger::modeChanger (fPtr *funcArray) {
+  _funcArray = funcArray;
+}
+
+void modeChanger::op () {
+  (*_funcArray[0])();
+  (*_funcArray[1])(); // Line 27: this line generates a runtime error! Just comment it to get all work
+}
+
+void (*modeFuncArray[])(void) = {f1, f2, f2};
+
+modeChanger *mode = new modeChanger (modeFuncArray);
+
+int main() {
+    (*modeFuncArray[1])(); // Works fine
+
+    mode->op(); // generates a runtime error
+    return 0;
+}
+
+*/
