@@ -25,11 +25,14 @@ void f3 (void) {
 /* */
 // begin modeChanger.h
 // массив указателей на функции:
-typedef void (*modeFuncArrayPtr)[](void);
+typedef void (*fPtr)(void);
+
+//void (*modeFuncArray[])(void) = {f1, f2, f3);
+void fColorDemo10sec (void);
 
 class modeChanger {
   public:
-    void modeChanger (modeFuncArrayPtr funcArray, unsigned int numModes);
+    modeChanger (fPtr funcArray, unsigned int numModes);
     int currMode (void);
     int nextMode (void);
     int prevMode (void);
@@ -40,7 +43,13 @@ class modeChanger {
     int _currMode = -1; // -1 is an indication of an error (index out of range; -1 = array not initialized; -2 = function not found; etc);
     int _prevMode = -100;
     unsigned int _numModes = -1;
-    modeFuncArrayPtr _funcArray = NULL;
+    fPtr _funcArray = NULL;
+};
+
+modeChanger::modeChanger (fPtr funcArray, const unsigned int numModes) {
+  _currMode = 0;
+  _funcArray = funcArray;
+  _numModes = numModes;
 }
 
 bool modeChanger::modeJustChanged (void) {
@@ -49,12 +58,6 @@ bool modeChanger::modeJustChanged (void) {
         return true;
     }
     return false;
-}
-
-void modeChanger::modeChanger (modeFuncArrayPtr funcArray, unsigned int numModes) {
-  _currMode (0);
-  _funcArray = funcArray;
-  _numModes = numModes;
 }
 
 int modeChanger::currMode (void) { return _currMode; }
@@ -86,7 +89,7 @@ int modeChanger::applyMode (void *newModeFunc(void)) {
         }
     }
     if (_currMode < 0) { // newModeFunc not found in the list of our registered functions! This is not allowed!
-        Serial.println ("\n\nERROR! MODE NOT FOUND!\n\n);
+        Serial.println ("\n\nERROR! MODE NOT FOUND!\n\n");
         delay (1000);
     }
     return _currMode; 
@@ -101,10 +104,6 @@ void modeChanger::callCurrModeFunc (void) {
 // end modeChanger.h
 /**/
 
-//void (*modeFuncArray[])(void) = {f1, f2, f3);
-static modeFuncArrayPtr modeFuncArray[] {f1, f2, f3, fColorDemo10sec);
-const int numModes = sizeof(modeFuncArray)/sizeof(modeFuncArray[0]);
-
 int currMode (void) {
   static int i = 0;
   
@@ -114,13 +113,18 @@ int currMode (void) {
   return i;
 }
 
+static fPtr modeFuncArray[] {f1, f2, f3, fColorDemo10sec};
+const unsigned int numModes = sizeof(modeFuncArray)/sizeof(modeFuncArray[0]);
+modeChanger mode = new modeChanger (modeFuncArray, numModes);
+
 void setup () {
   initDevices ();
   readEEPROM ();
 }
 
 void loop () {
-  (*modeFuncArray)[currMode ()] ();
+  //(*modeFuncArray)[currMode ()] ();
+  mode.callCurrModeFunc ();
   delay (1000);
 }
 
@@ -136,7 +140,7 @@ void fColorDemo10sec (void) {
   Serial.println ("Mode: fDemo1");
   
   /* */
-  if (modeJustChanged()) {
+  if (mode.modeJustChanged()) {
       millisAtStart = millis ();
   }
   /* */
