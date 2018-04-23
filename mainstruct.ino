@@ -156,8 +156,8 @@ void fColorDemo10sec (void) {
       double wavelen = 6;
     
       for (int led = 0; led < numLEDs; led++) {
-          // =ОСТАТ(время/timeStep1-направление*диод; waveLen)<1/waveLen
-          if ((deltaT/timeStep-direction*led)%wavelen < 1/wavelen) {
+          // =ОСТАТ(время/timeStep1-направление*диод; waveLen)<1
+          if ((deltaT/timeStep-direction*led)%wavelen == 0) {
               // switch this led on
           } else {
               // switch this led off
