@@ -150,6 +150,19 @@ void fColorDemo10sec (void) {
     applyMode (f1);
   }
   else {
+      unsigned long deltaT = millis () - millisAtStart;
+      int timeStep = 300;
+      int direction = 1;
+      double wavelen = 6;
+    
+      for (int led = 0; led < numLEDs; led++) {
+          // =ОСТАТ(время/timeStep1-направление*диод; waveLen)<1/waveLen
+          if ((deltaT/timeStep-direction*led)%wavelen < 1/wavelen) {
+              // switch this led on
+          } else {
+              // switch this led off
+          }
+      }
   }
 }
 
