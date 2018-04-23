@@ -159,6 +159,7 @@ void fColorDemo10sec (void) {
           // =ОСТАТ(время/timeStep1-направление*диод; waveLen)<1
           if ((deltaT/timeStep-direction*led)%wavelen == 0) {
               // switch this led on
+              // Хорошо бы и предыдущий led несильно зажигать, чтобы выглядело как затухающий след 
           } else {
               // switch this led off
           }
