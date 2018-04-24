@@ -1,56 +1,105 @@
+#include "Timer.h"
+#define numLEDs 60
 
-bool f1 (void) {
-  Serial.println ("Mode: f1");
-  return false;
-  
-  /*
-  if (turnLeft ()) {
-  } 
-  elseif (turnRight ()) {
-  }
-  if (shortPress ()) {
-  } 
-  elseif (longPress ()) {
-  }
-  */
+int f1 (void) {
+  Serial.println ("\nMode: f1");
+  return 0;
 }
 
-bool f2 (void) {
+int f2 (void) {
   Serial.println ("Mode: f2");
+  return 0;
 }
 
-void f3 (void) {
+int f3 (void) {
   Serial.println ("Mode: f3");
+  return 0;
 }
 
 /* */
 // begin modeChanger.h
-// массив указателей на функции:
-typedef bool (*fPtr)(void);
-
-//void (*modeFuncArray[])(void) = {f1, f2, f3);
-void fColorDemo10sec (void);
+enum class LoopDir {FORWARD, BACK, FORWARD_AND_BACK, BACK_AND_FORWARD};
+typedef int (*fPtr)(void); 
 
 class modeChanger {
   public:
-    modeChanger (fPtr funcArray, int numModes);
-    int currMode (void);
+    modeChanger (fPtr *funcArray, int numModes);
+    void testOp ();
+    int getCurrModeNumber (void);
     int nextMode (void);
     int prevMode (void);
-    int applyMode (void *newModeFunc(void));
-    bool callCurrModeFunc (void);
+    int applyMode (int newMode);
+    int applyMode (fPtr newModeFunc);
+    int callCurrModeFunc (void);
     bool modeJustChanged (void);
+    bool loopThruModeFunc (int nSec=10, int numCycles=1, LoopDir direction = LoopDir::FORWARD);
+    
+    // moves to next function only when current function returns non-zero:
+    bool loopThruModeFunc (int numCycles=1, LoopDir direction = LoopDir::FORWARD); 
   private:
     int _currMode = -1; // -1 is an indication of an error (index out of range; -1 = array not initialized; -2 = function not found; etc);
     int _prevMode = -100;
     int _numModes = -1;
-    fPtr _funcArray = NULL;
+    fPtr *_funcArray = NULL;
+    Timer *timer;
 };
 
-modeChanger::modeChanger (fPtr funcArray, const int numModes) {
-  _currMode = 0;
+modeChanger::modeChanger (fPtr *funcArray, int numModes) {
   _funcArray = funcArray;
   _numModes = numModes;
+  _currMode = 0;
+  timer = new Timer ();
+}
+
+bool modeChanger::loopThruModeFunc (int nSec, int numCycles, LoopDir direction) {
+    // Each function in _funcArray is called for nSec seconds
+    static int _numCycles;
+  
+    if (!timer->isOn ()) {
+        _numCycles = numCycles;
+        timer->setInterval ("ms", nSec*1000);
+        timer->switchOn ();
+        applyMode (0);
+        switch (direction) {
+          case LoopDir::BACK:
+          case LoopDir::BACK_AND_FORWARD:
+              prevMode (); // Starting from last function and looping to the first one
+        };
+    } else if (timer->needToTrigger ()) {
+        switch (direction) {
+          case LoopDir::FORWARD:
+          case LoopDir::FORWARD_AND_BACK: // FORWARD_AND_BACK now is a stub; will be developed later
+              nextMode ();
+              if (getCurrModeNumber () == 0) { // We've travelled the whole loop of functions!
+                  if (--_numCycles == 0) {
+                      timer->switchOff ();
+                      return true; 
+                  }
+              }
+              break;
+          case LoopDir::BACK:
+          case LoopDir::BACK_AND_FORWARD: // BACK_AND_FORWARD now is a stub; will be developed later
+              prevMode ();
+              if (getCurrModeNumber () == _numModes-1) { // We've travelled the whole loop of functions!
+                  if (--_numCycles == 0) {
+                      timer->switchOff ();
+                      return true; 
+                  }
+              }
+              break;
+        }
+    } 
+    callCurrModeFunc ();
+    return false;
+}
+
+// moves to next function only when current function returns non-zero:
+bool modeChanger::loopThruModeFunc (int numCycles, LoopDir direction) {return false;}
+
+void modeChanger::testOp () {
+  (*_funcArray[0])();
+  (*_funcArray[1])(); 
+  (*_funcArray[2])(); 
 }
 
 bool modeChanger::modeJustChanged (void) {
@@ -61,7 +110,7 @@ bool modeChanger::modeJustChanged (void) {
     return false;
 }
 
-int modeChanger::currMode (void) { return _currMode; }
+int modeChanger::getCurrModeNumber (void) { return _currMode; }
 
 int modeChanger::nextMode (void) {
     if (_currMode > -1) { // Negative stands for some error
@@ -69,23 +118,40 @@ int modeChanger::nextMode (void) {
             _currMode = 0;
         }
     }    
+    Serial.print ("\nTrying to switch to mode ");
+    Serial.println (_currMode);
+
     return _currMode; 
 }
 
 int modeChanger::prevMode (void) {
     if (_currMode > -1) { // Negative stands for some error
         if (--_currMode == -1) { // Close the circle backwards
-            _currMode = _numModes;
+            _currMode = _numModes-1;
         }
     }    
     return _currMode; 
 }
 
-int modeChanger::applyMode (void *newModeFunc(void)) {
+int modeChanger::applyMode (int newMode) {
+  
+    if ((newMode >=0) && (newMode < _numModes)) {
+        _currMode = newMode;
+    } else {
+        _currMode = -10; // out of range error;
+    }
+    
+    return _currMode; 
+}
+
+int modeChanger::applyMode (fPtr newModeFunc) {
     _currMode = -2; // negative value is an indication of an error
-    for (int i = 0; i++; i < _numModes) {
-        // compare two pointers
-        if (newModeFunc == _funcArray[i]) {
+
+    for (int i = 0; i < _numModes; i++) {
+       // compare two pointers
+       //Serial.print("_funcArray[i]: ");
+       //Serial.println((unsigned long)_funcArray[i]);
+       if (newModeFunc == _funcArray[i]) {
             _currMode = i;
         }
     }
@@ -96,36 +162,32 @@ int modeChanger::applyMode (void *newModeFunc(void)) {
     return _currMode; 
 }
 
-void modeChanger::callCurrModeFunc (void) {
+int modeChanger::callCurrModeFunc (void) {
     if (_currMode > -1) { // Negative stands for some error
-        (*_funcArray)[_currMode] ();
+        return (*_funcArray[_currMode]) ();
     }
+    return -1; // error
 }
 
 // end modeChanger.h
-/**/
 
-int currMode (void) {
-  static int i = 0;
-  
-  /*if (++i == _numModes) {
-    i = 0;
-  }*/
-  return i;
-}
-
-static fPtr modeFuncArray[] {f1, f2, f3, fColorDemo10sec};
-const int numModes = sizeof(modeFuncArray)/sizeof(modeFuncArray[0]);
-modeChanger mode = new modeChanger (modeFuncArray, numModes);
+int fColorDemo10sec (void);
+int (*modeFuncArray[])(void) = {f1, f2, f3, fColorDemo10sec};
+modeChanger *mode = new modeChanger (modeFuncArray, sizeof(modeFuncArray)/sizeof(modeFuncArray[0]));
 
 void setup () {
   initDevices ();
   readEEPROM ();
+
+  Serial.println ("\n\nStarting...");
 }
 
 void loop () {
-  //(*modeFuncArray)[currMode ()] ();
-  mode.callCurrModeFunc ();
+  //mode->applyMode (f2);
+  
+  mode->callCurrModeFunc();
+
+  mode->nextMode();
   delay (1000);
 }
 
@@ -135,99 +197,29 @@ void initDevices (void) {
 
 void readEEPROM (void) {}
 
-void fColorDemo10sec (void) {
+int fColorDemo10sec (void) {
   static unsigned long millisAtStart;
   
   Serial.println ("Mode: fDemo1");
   
   /* */
-  if (mode.modeJustChanged()) {
+  if (mode->modeJustChanged()) {
       millisAtStart = millis ();
   }
-  /* */
-  
-  if (secondsPassed (10)) {
-    Serial.println ("Timeout: 10 secondsPassed; Applying mode f1");
-    applyMode (f1);
-  }
-  else {
-      unsigned long deltaT = millis () - millisAtStart;
-      int timeStep = 300;
-      int direction = 1;
-      double wavelen = 6;
-    
-      for (int led = 0; led < numLEDs; led++) {
-          // =ОСТАТ(время/timeStep1-направление*диод; waveLen)<1
-          if ((deltaT/timeStep-direction*led)%wavelen < 1) {
-              // switch this led on
-              // Хорошо бы и предыдущий led несильно зажигать, чтобы выглядело как затухающий след 
-              // И встречную волну пустить другого цвета
-          } else {
-              // switch this led off
-          }
+  unsigned long deltaT = millis () - millisAtStart;
+  int timeStep = 300;
+  int direction = 1;
+  int wavelen = 6;
+
+  for (int led = 0; led < numLEDs; led++) {
+      // =ОСТАТ(время/timeStep1-направление*диод; waveLen)<1
+      if ((deltaT/timeStep-direction*led)%wavelen < 1) {
+          // switch this led on
+          // Хорошо бы и предыдущий led несильно зажигать, чтобы выглядело как затухающий след 
+          // И встречную волну пустить другого цвета
+      } else {
+          // switch this led off
       }
   }
+  return 0;
 }
-
-enum class LoopDir {FORWARD, BACK, FORWARD_AND_BACK, BACK_AND_FORWARD};
-
-bool modeChanger::loopThruModeFunc (int nSec=10, int numCycles=1, auto direction = LoopDir::FORWARD) {
-    // Each function in _funcArray is called for nSec seconds
-    static int _numCycles;
-  
-    if (timerNotRunning ()) {
-        _numCycles = numCycles;
-        startTimer (nSec);
-        setCurrMode (0);
-        switch (LoopDir) {
-          case BACK:
-          case BACK_AND_FORWARD:
-              prevMode (); // Starting from last function and looping to the first one
-        }
-    } elseif (timerNeedToTrigger ()) {
-        switch (LoopDir) {
-          case FORWARD:
-          case FORWARD_AND_BACK: // FORWARD_AND_BACK now is a stub; will be developed later
-              nextMode ();
-              if (getCurrMode () == 0) { // We've travelled the whole loop of functions!
-                  if (--_numCycles == 0) {
-                      stopTimer ();
-                      return true; 
-                  }
-              }
-              break;
-          case BACK:
-          case BACK_AND_FORWARD: // BACK_AND_FORWARD now is a stub; will be developed later
-              prevMode ();
-              if (getCurrMode () == _numModes-1) { // We've travelled the whole loop of functions!
-                  if (--_numCycles == 0) {
-                      stopTimer ();
-                      return true; 
-                  }
-              }
-              break;
-        }
-    } 
-    currMode ();
-    return false;
-}
-
-// moves to next function only when current function returns true:
-bool modeChanger::loopThruModeFunc (int numCycles=1, auto direction = LoopDir::FORWARD);
-
-
-bool secondsPassed (unsigned int seconds) {
-  static bool countdownIsRunning = false;
-  static unsigned long savedMillisec;
-  
-  if (!countdownIsRunning) { 
-      countdownIsRunning = true; 
-      savedMillisec = millis ();
-  }
-  if ((millis () - savedMillisec)/1000UL >= seconds) {
-      countdownIsRunning = false;
-      return true;
-  }
-  return false;
-}
-                                 
