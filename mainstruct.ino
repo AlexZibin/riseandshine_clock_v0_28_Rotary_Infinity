@@ -168,20 +168,30 @@ void fColorDemo10sec (void) {
   }
 }
 
-bool modeChanger::loopThruModeFunc (int nSec, bool oneCycle=true, bool forward = true) {
+enum class LoopDir {FORWARD, BACK, FORWARD_AND_BACK, BACK_AND_FORWARD};
+
+bool modeChanger::loopThruModeFunc (int nSec, bool oneCycle=true, auto direction = LoopDir::FORWARD) {
     // Each function in _funcArray is called for nSec seconds
   
     if (timerNotRunning ()) {
         startTimer (nSec);
     } elseif (timerNeedToTrigger ()) {
-        forward ? nextMode () : prevMode ();
+        switch (LoopDir) {
+          case FORWARD:
+          case FORWARD_AND_BACK: // FORWARD_AND_BACK now is a stub; will be developed later
+              nextMode ();
+              break;
+          case BACK:
+          case BACK_AND_FORWARD:
+              prevMode ();
+              break;
+        }
     } 
-    if (_currMode > -1) { // Negative stands for some error
-        (*_funcArray)[_currMode] ();
-    }
+    currMode ();
 }
 
-
+bool modeChanger::loopThruModeFunc (bool oneCycle=true, auto direction = LoopDir::FORWARD);
+// moves to next function only when current function returns true
 
 
 bool secondsPassed (unsigned int seconds) {
