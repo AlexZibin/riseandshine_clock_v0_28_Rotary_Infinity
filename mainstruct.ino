@@ -1,6 +1,7 @@
 
-void f1 (void) {
+bool f1 (void) {
   Serial.println ("Mode: f1");
+  return false;
   
   /*
   if (turnLeft ()) {
@@ -14,7 +15,7 @@ void f1 (void) {
   */
 }
 
-void f2 (void) {
+bool f2 (void) {
   Serial.println ("Mode: f2");
 }
 
@@ -25,28 +26,28 @@ void f3 (void) {
 /* */
 // begin modeChanger.h
 // массив указателей на функции:
-typedef void (*fPtr)(void);
+typedef bool (*fPtr)(void);
 
 //void (*modeFuncArray[])(void) = {f1, f2, f3);
 void fColorDemo10sec (void);
 
 class modeChanger {
   public:
-    modeChanger (fPtr funcArray, unsigned int numModes);
+    modeChanger (fPtr funcArray, int numModes);
     int currMode (void);
     int nextMode (void);
     int prevMode (void);
     int applyMode (void *newModeFunc(void));
-    void callCurrModeFunc (void);
+    bool callCurrModeFunc (void);
     bool modeJustChanged (void);
   private:
     int _currMode = -1; // -1 is an indication of an error (index out of range; -1 = array not initialized; -2 = function not found; etc);
     int _prevMode = -100;
-    unsigned int _numModes = -1;
+    int _numModes = -1;
     fPtr _funcArray = NULL;
 };
 
-modeChanger::modeChanger (fPtr funcArray, const unsigned int numModes) {
+modeChanger::modeChanger (fPtr funcArray, const int numModes) {
   _currMode = 0;
   _funcArray = funcArray;
   _numModes = numModes;
@@ -114,7 +115,7 @@ int currMode (void) {
 }
 
 static fPtr modeFuncArray[] {f1, f2, f3, fColorDemo10sec};
-const unsigned int numModes = sizeof(modeFuncArray)/sizeof(modeFuncArray[0]);
+const int numModes = sizeof(modeFuncArray)/sizeof(modeFuncArray[0]);
 modeChanger mode = new modeChanger (modeFuncArray, numModes);
 
 void setup () {
@@ -170,7 +171,7 @@ void fColorDemo10sec (void) {
 
 enum class LoopDir {FORWARD, BACK, FORWARD_AND_BACK, BACK_AND_FORWARD};
 
-bool modeChanger::loopThruModeFunc (int nSec, int numCycles=1, auto direction = LoopDir::FORWARD) {
+bool modeChanger::loopThruModeFunc (int nSec=10, int numCycles=1, auto direction = LoopDir::FORWARD) {
     // Each function in _funcArray is called for nSec seconds
     static int _numCycles;
   
