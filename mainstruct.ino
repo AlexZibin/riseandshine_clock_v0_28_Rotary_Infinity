@@ -168,6 +168,22 @@ void fColorDemo10sec (void) {
   }
 }
 
+bool modeChanger::loopThruModeFunc (int nSec, bool oneCycle=true, bool forward = true) {
+    // Each function in _funcArray is called for nSec seconds
+  
+    if (timerNotRunning ()) {
+        startTimer (nSec);
+    } elseif (timerNeedToTrigger ()) {
+        forward ? nextMode () : prevMode ();
+    } 
+    if (_currMode > -1) { // Negative stands for some error
+        (*_funcArray)[_currMode] ();
+    }
+}
+
+
+
+
 bool secondsPassed (unsigned int seconds) {
   static bool countdownIsRunning = false;
   static unsigned long savedMillisec;
