@@ -170,10 +170,12 @@ void fColorDemo10sec (void) {
 
 enum class LoopDir {FORWARD, BACK, FORWARD_AND_BACK, BACK_AND_FORWARD};
 
-bool modeChanger::loopThruModeFunc (int nSec, bool oneCycle=true, auto direction = LoopDir::FORWARD) {
+bool modeChanger::loopThruModeFunc (int nSec, int numCycles=1, auto direction = LoopDir::FORWARD) {
     // Each function in _funcArray is called for nSec seconds
+    static int _numCycles;
   
     if (timerNotRunning ()) {
+        _numCycles = numCycles;
         startTimer (nSec);
         setCurrMode (0);
         switch (LoopDir) {
@@ -186,14 +188,22 @@ bool modeChanger::loopThruModeFunc (int nSec, bool oneCycle=true, auto direction
           case FORWARD:
           case FORWARD_AND_BACK: // FORWARD_AND_BACK now is a stub; will be developed later
               nextMode ();
-              if (getCurrMode ()==0) return true; // We've travelled the whole loop of functions!
-              stopTimer ();
+              if (getCurrMode () == 0) { // We've travelled the whole loop of functions!
+                  if (--_numCycles == 0) {
+                      stopTimer ();
+                      return true; 
+                  }
+              }
               break;
           case BACK:
-          case BACK_AND_FORWARD:
+          case BACK_AND_FORWARD: // BACK_AND_FORWARD now is a stub; will be developed later
               prevMode ();
-              if (getCurrMode ()==_numModes-1) return true; // We've travelled the whole loop of functions!
-              stopTimer ();
+              if (getCurrMode () == _numModes-1) { // We've travelled the whole loop of functions!
+                  if (--_numCycles == 0) {
+                      stopTimer ();
+                      return true; 
+                  }
+              }
               break;
         }
     } 
@@ -201,8 +211,8 @@ bool modeChanger::loopThruModeFunc (int nSec, bool oneCycle=true, auto direction
     return false;
 }
 
-bool modeChanger::loopThruModeFunc (bool oneCycle=true, auto direction = LoopDir::FORWARD);
-// moves to next function only when current function returns true
+// moves to next function only when current function returns true:
+bool modeChanger::loopThruModeFunc (int numCycles=1, auto direction = LoopDir::FORWARD);
 
 
 bool secondsPassed (unsigned int seconds) {
