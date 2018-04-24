@@ -186,12 +186,14 @@ bool modeChanger::loopThruModeFunc (int nSec, bool oneCycle=true, auto direction
           case FORWARD:
           case FORWARD_AND_BACK: // FORWARD_AND_BACK now is a stub; will be developed later
               nextMode ();
-              if (getCurrMode ()==0) return true; // We've made the whole loop of functions!
+              if (getCurrMode ()==0) return true; // We've travelled the whole loop of functions!
+              stopTimer ();
               break;
           case BACK:
           case BACK_AND_FORWARD:
               prevMode ();
-              if (getCurrMode ()==_numModes-1) return true; // We've made the whole loop of functions!
+              if (getCurrMode ()==_numModes-1) return true; // We've travelled the whole loop of functions!
+              stopTimer ();
               break;
         }
     } 
