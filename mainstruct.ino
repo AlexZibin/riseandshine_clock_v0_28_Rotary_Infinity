@@ -196,7 +196,7 @@ bool modeChanger::loopThruModeFunc (int nSec, bool oneCycle=true, auto direction
         }
     } 
     currMode ();
-  return false;
+    return false;
 }
 
 bool modeChanger::loopThruModeFunc (bool oneCycle=true, auto direction = LoopDir::FORWARD);
