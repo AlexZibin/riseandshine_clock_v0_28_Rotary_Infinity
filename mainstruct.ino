@@ -1,17 +1,17 @@
 #include "Timer.h" // https://github.com/AlexZibin/timer
 #define numLEDs 60
 
-int f1 (int dummy) {
+int f1 (long dummy) {
   Serial.println ("\nMode: f1");
   return 0;
 }
 
-int f2 (int dummy) {
+int f2 (long dummy) {
   Serial.println ("Mode: f2");
   return 0;
 }
 
-int f3 (int dummy) {
+int f3 (long dummy) {
   Serial.println ("Mode: f3");
   return 0;
 }
@@ -19,13 +19,18 @@ int f3 (int dummy) {
 /* */
 // begin modeChanger.h
 enum class LoopDir {FORWARD, BACK, FORWARD_AND_BACK, BACK_AND_FORWARD};
-typedef int (*fPtr)(int); 
+typedef int (*fPtr)(long); 
 
 class ModeChanger {
+    fPtr *_funcArray;
+    int _numModes;
+    int _currMode; // -1 is an indication of an error (index out of range; -1 = array not initialized; -2 = function not found; etc);
+    int _prevMode;
+    Timer timer;
   public:
-    ModeChanger (fPtr *funcArray, int numModes);
+    ModeChanger (fPtr *funcArray, int numModes) : _funcArray(funcArray), _numModes(numModes), _currMode(0), _prevMode(-100) {}
     void testOp ();
-    int getCurrModeNumber (void);
+    int getCurrModeNumber (void) { return _currMode; };
     int nextMode (void);
     int prevMode (void);
     int applyMode (int newMode);
@@ -37,27 +42,14 @@ class ModeChanger {
     //bool ModeChanger::loopThruModeFunc (int nSec, int numCycles, LoopDir direction, bool switchAtZero=false) {
     
     // moves to next function only when current function returns zero:
-    bool loopThruModeFunc (LoopDir direction = LoopDir::FORWARD, int numCycles=1); 
-  private:
-    int _currMode = -1; // -1 is an indication of an error (index out of range; -1 = array not initialized; -2 = function not found; etc);
-    int _prevMode = -100;
-    int _numModes = -1;
-    fPtr *_funcArray = NULL;
-    Timer timer;
+    bool loopThruModeFunc (LoopDir direction = LoopDir::FORWARD, long numCycles=1); 
 };
-
-ModeChanger::ModeChanger (fPtr *funcArray, int numModes) {
-  _funcArray = funcArray;
-  _numModes = numModes;
-  _currMode = 0;
-  //timer = new Timer ();
-}
 
 bool ModeChanger::loopThruModeFunc (int nSec, int numCycles, LoopDir direction) {
 //bool ModeChanger::loopThruModeFunc (int nSec, int numCycles, LoopDir direction, bool switchAtZero) {
     // Each function in _funcArray is called for nSec seconds
     static int _numCycles;
-    static int _currentCallNumber;
+    static long _currentCallNumber;
   
     if (!timer.isOn ()) {
         _numCycles = numCycles;
@@ -99,7 +91,7 @@ bool ModeChanger::loopThruModeFunc (int nSec, int numCycles, LoopDir direction) 
 }
 
 // moves to next function only when current function returns zero:
-bool ModeChanger::loopThruModeFunc (LoopDir direction, int numCycles) {return false;}
+bool ModeChanger::loopThruModeFunc (LoopDir direction, long numCycles) {return false;}
 //bool ModeChanger::loopThruModeFunc (int nSec, int numCycles, LoopDir direction, bool switchAtZero) {
 
 void ModeChanger::testOp () {
@@ -115,8 +107,6 @@ bool ModeChanger::modeJustChanged (void) {
     }
     return false;
 }
-
-int ModeChanger::getCurrModeNumber (void) { return _currMode; }
 
 int ModeChanger::nextMode (void) {
     if (_currMode > -1) { // Negative stands for some error
@@ -168,17 +158,17 @@ int ModeChanger::applyMode (fPtr newModeFunc) {
     return _currMode; 
 }
 
-int ModeChanger::callCurrModeFunc (void) {
+int ModeChanger::callCurrModeFunc (int param) {
     if (_currMode > -1) { // Negative stands for some error
-        return (*_funcArray[_currMode]) ();
+        return (*_funcArray[_currMode]) (param);
     }
     return -1; // error
 }
 
 // end modeChanger.h
 
-int fColorDemo10sec (int currentCallNumber);
-int (*modeFuncArray[])(void) = {f1, f2, f3, fColorDemo10sec};
+int fColorDemo10sec (long currentCallNumber);
+int (*modeFuncArray[])(long) = {f1, f2, f3, fColorDemo10sec};
 ModeChanger *mode = new ModeChanger (modeFuncArray, sizeof(modeFuncArray)/sizeof(modeFuncArray[0]));
 
 void setup () {
@@ -203,10 +193,10 @@ void initDevices (int currentCallNumber) {
 
 void readEEPROM (void) {}
 
-int fColorDemo10sec (void) {
+int fColorDemo10sec (long currentCallNumber) {
   static unsigned long millisAtStart;
   
-  Serial.println ("Mode: fDemo1");
+  Serial.println ("Mode: fColorDemo10sec");
   
   /* /
   if (mode->modeJustChanged()) {
@@ -218,9 +208,9 @@ int fColorDemo10sec (void) {
   }
   
   unsigned long deltaT = millis () - millisAtStart;
-  int timeStep = 300;
-  int direction = 1;
-  int wavelen = 6;
+  const int timeStep = 300;
+  const int direction = 1;
+  const int wavelen = 6;
 
   for (int led = 0; led < numLEDs; led++) {
       // =ОСТАТ(время/timeStep1-направление*диод; waveLen)<1
