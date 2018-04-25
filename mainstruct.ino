@@ -43,14 +43,14 @@ class ModeChanger {
     int _prevMode = -100;
     int _numModes = -1;
     fPtr *_funcArray = NULL;
-    Timer *timer;
+    Timer timer;
 };
 
 ModeChanger::ModeChanger (fPtr *funcArray, int numModes) {
   _funcArray = funcArray;
   _numModes = numModes;
   _currMode = 0;
-  timer = new Timer ();
+  //timer = new Timer ();
 }
 
 bool ModeChanger::loopThruModeFunc (int nSec, int numCycles, LoopDir direction) {
@@ -59,10 +59,10 @@ bool ModeChanger::loopThruModeFunc (int nSec, int numCycles, LoopDir direction) 
     static int _numCycles;
     static int _currentCallNumber;
   
-    if (!timer->isOn ()) {
+    if (!timer.isOn ()) {
         _numCycles = numCycles;
-        timer->setInterval ("ms", nSec*1000);
-        timer->switchOn ();
+        timer.setInterval ("ms", nSec*1000);
+        timer.switchOn ();
         applyMode (0);
         _currentCallNumber = 0;
         switch (direction) {
@@ -70,14 +70,14 @@ bool ModeChanger::loopThruModeFunc (int nSec, int numCycles, LoopDir direction) 
           case LoopDir::BACK_AND_FORWARD:
               prevMode (); // Starting from last function and looping to the first one
         };
-    } else if (timer->needToTrigger ()) {
+    } else if (timer.needToTrigger ()) {
         switch (direction) {
           case LoopDir::FORWARD:
           case LoopDir::FORWARD_AND_BACK: // FORWARD_AND_BACK now is a stub; will be developed later
               nextMode ();
               if (getCurrModeNumber () == 0) { // We've travelled the whole loop of functions!
                   if (--_numCycles == 0) {
-                      timer->switchOff ();
+                      timer.switchOff ();
                       return true; 
                   }
               }
@@ -87,7 +87,7 @@ bool ModeChanger::loopThruModeFunc (int nSec, int numCycles, LoopDir direction) 
               prevMode ();
               if (getCurrModeNumber () == _numModes-1) { // We've travelled the whole loop of functions!
                   if (--_numCycles == 0) {
-                      timer->switchOff ();
+                      timer.switchOff ();
                       return true; 
                   }
               }
