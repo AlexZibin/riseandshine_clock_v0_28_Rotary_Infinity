@@ -24,11 +24,11 @@ typedef int (*fPtr)(long);
 class ModeChanger {
     fPtr *_funcArray;
     int _numModes;
-    int _currMode; // -1 is an indication of an error (index out of range; -1 = array not initialized; -2 = function not found; etc);
-    int _prevMode;
+    int _currMode = 0; // -1 is an indication of an error (index out of range; -1 = array not initialized; -2 = function not found; etc);
+    int _prevMode = -100;
     Timer timer;
   public:
-    ModeChanger (fPtr *funcArray, int numModes) : _funcArray(funcArray), _numModes(numModes), _currMode(0), _prevMode(-100) {}
+    ModeChanger (fPtr *funcArray, int numModes) : _funcArray(funcArray), _numModes(numModes) {}
     void testOp ();
     int getCurrModeNumber (void) { return _currMode; };
     int nextMode (void);
