@@ -34,6 +34,7 @@ class ModeChanger {
     bool modeJustChanged (void);
     bool loopThruModeFunc (int nSec=10, int numCycles=1, LoopDir direction = LoopDir::FORWARD);
     //bool loopThruModeFunc (int nSec=10, int numCycles=1, LoopDir direction = LoopDir::FORWARD, int startMode = 0);
+    //bool ModeChanger::loopThruModeFunc (int nSec, int numCycles, LoopDir direction, bool switchAtZero=false) {
     
     // moves to next function only when current function returns zero:
     bool loopThruModeFunc (LoopDir direction = LoopDir::FORWARD, int numCycles=1); 
@@ -53,14 +54,17 @@ ModeChanger::ModeChanger (fPtr *funcArray, int numModes) {
 }
 
 bool ModeChanger::loopThruModeFunc (int nSec, int numCycles, LoopDir direction) {
+//bool ModeChanger::loopThruModeFunc (int nSec, int numCycles, LoopDir direction, bool switchAtZero) {
     // Each function in _funcArray is called for nSec seconds
     static int _numCycles;
+    static int _currentCallNumber;
   
     if (!timer->isOn ()) {
         _numCycles = numCycles;
         timer->setInterval ("ms", nSec*1000);
         timer->switchOn ();
         applyMode (0);
+        _currentCallNumber = 0;
         switch (direction) {
           case LoopDir::BACK:
           case LoopDir::BACK_AND_FORWARD:
@@ -90,12 +94,13 @@ bool ModeChanger::loopThruModeFunc (int nSec, int numCycles, LoopDir direction) 
               break;
         }
     } 
-    callCurrModeFunc ();
+    callCurrModeFunc (_currentCallNumber++);
     return false;
 }
 
 // moves to next function only when current function returns zero:
 bool ModeChanger::loopThruModeFunc (LoopDir direction, int numCycles) {return false;}
+//bool ModeChanger::loopThruModeFunc (int nSec, int numCycles, LoopDir direction, bool switchAtZero) {
 
 void ModeChanger::testOp () {
   (*_funcArray[0])();
