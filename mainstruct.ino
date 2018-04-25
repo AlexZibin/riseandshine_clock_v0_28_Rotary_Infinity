@@ -1,17 +1,17 @@
 #include "Timer.h" // https://github.com/AlexZibin/timer
 #define numLEDs 60
 
-int f1 (void) {
+int f1 (int dummy) {
   Serial.println ("\nMode: f1");
   return 0;
 }
 
-int f2 (void) {
+int f2 (int dummy) {
   Serial.println ("Mode: f2");
   return 0;
 }
 
-int f3 (void) {
+int f3 (int dummy) {
   Serial.println ("Mode: f3");
   return 0;
 }
@@ -19,11 +19,11 @@ int f3 (void) {
 /* */
 // begin modeChanger.h
 enum class LoopDir {FORWARD, BACK, FORWARD_AND_BACK, BACK_AND_FORWARD};
-typedef int (*fPtr)(void); 
+typedef int (*fPtr)(int); 
 
-class modeChanger {
+class ModeChanger {
   public:
-    modeChanger (fPtr *funcArray, int numModes);
+    ModeChanger (fPtr *funcArray, int numModes);
     void testOp ();
     int getCurrModeNumber (void);
     int nextMode (void);
@@ -33,9 +33,10 @@ class modeChanger {
     int callCurrModeFunc (void);
     bool modeJustChanged (void);
     bool loopThruModeFunc (int nSec=10, int numCycles=1, LoopDir direction = LoopDir::FORWARD);
+    //bool loopThruModeFunc (int nSec=10, int numCycles=1, LoopDir direction = LoopDir::FORWARD, int startMode = 0);
     
-    // moves to next function only when current function returns non-zero:
-    bool loopThruModeFunc (int numCycles=1, LoopDir direction = LoopDir::FORWARD); 
+    // moves to next function only when current function returns zero:
+    bool loopThruModeFunc (LoopDir direction = LoopDir::FORWARD, int numCycles=1); 
   private:
     int _currMode = -1; // -1 is an indication of an error (index out of range; -1 = array not initialized; -2 = function not found; etc);
     int _prevMode = -100;
@@ -44,14 +45,14 @@ class modeChanger {
     Timer *timer;
 };
 
-modeChanger::modeChanger (fPtr *funcArray, int numModes) {
+ModeChanger::ModeChanger (fPtr *funcArray, int numModes) {
   _funcArray = funcArray;
   _numModes = numModes;
   _currMode = 0;
   timer = new Timer ();
 }
 
-bool modeChanger::loopThruModeFunc (int nSec, int numCycles, LoopDir direction) {
+bool ModeChanger::loopThruModeFunc (int nSec, int numCycles, LoopDir direction) {
     // Each function in _funcArray is called for nSec seconds
     static int _numCycles;
   
@@ -93,16 +94,16 @@ bool modeChanger::loopThruModeFunc (int nSec, int numCycles, LoopDir direction) 
     return false;
 }
 
-// moves to next function only when current function returns non-zero:
-bool modeChanger::loopThruModeFunc (int numCycles, LoopDir direction) {return false;}
+// moves to next function only when current function returns zero:
+bool ModeChanger::loopThruModeFunc (LoopDir direction, int numCycles) {return false;}
 
-void modeChanger::testOp () {
+void ModeChanger::testOp () {
   (*_funcArray[0])();
   (*_funcArray[1])(); 
   (*_funcArray[2])(); 
 }
 
-bool modeChanger::modeJustChanged (void) {
+bool ModeChanger::modeJustChanged (void) {
     if (_prevMode != _currMode) {
         _prevMode = _currMode;
         return true;
@@ -110,9 +111,9 @@ bool modeChanger::modeJustChanged (void) {
     return false;
 }
 
-int modeChanger::getCurrModeNumber (void) { return _currMode; }
+int ModeChanger::getCurrModeNumber (void) { return _currMode; }
 
-int modeChanger::nextMode (void) {
+int ModeChanger::nextMode (void) {
     if (_currMode > -1) { // Negative stands for some error
         if (++_currMode == _numModes) { // Close the circle
             _currMode = 0;
@@ -124,7 +125,7 @@ int modeChanger::nextMode (void) {
     return _currMode; 
 }
 
-int modeChanger::prevMode (void) {
+int ModeChanger::prevMode (void) {
     if (_currMode > -1) { // Negative stands for some error
         if (--_currMode == -1) { // Close the circle backwards
             _currMode = _numModes-1;
@@ -133,7 +134,7 @@ int modeChanger::prevMode (void) {
     return _currMode; 
 }
 
-int modeChanger::applyMode (int newMode) {
+int ModeChanger::applyMode (int newMode) {
   
     if ((newMode >=0) && (newMode < _numModes)) {
         _currMode = newMode;
@@ -144,7 +145,7 @@ int modeChanger::applyMode (int newMode) {
     return _currMode; 
 }
 
-int modeChanger::applyMode (fPtr newModeFunc) {
+int ModeChanger::applyMode (fPtr newModeFunc) {
     _currMode = -2; // negative value is an indication of an error
 
     for (int i = 0; i < _numModes; i++) {
@@ -162,7 +163,7 @@ int modeChanger::applyMode (fPtr newModeFunc) {
     return _currMode; 
 }
 
-int modeChanger::callCurrModeFunc (void) {
+int ModeChanger::callCurrModeFunc (void) {
     if (_currMode > -1) { // Negative stands for some error
         return (*_funcArray[_currMode]) ();
     }
@@ -171,9 +172,9 @@ int modeChanger::callCurrModeFunc (void) {
 
 // end modeChanger.h
 
-int fColorDemo10sec (void);
+int fColorDemo10sec (int currentCallNumber);
 int (*modeFuncArray[])(void) = {f1, f2, f3, fColorDemo10sec};
-modeChanger *mode = new modeChanger (modeFuncArray, sizeof(modeFuncArray)/sizeof(modeFuncArray[0]));
+ModeChanger *mode = new ModeChanger (modeFuncArray, sizeof(modeFuncArray)/sizeof(modeFuncArray[0]));
 
 void setup () {
   initDevices ();
@@ -191,7 +192,7 @@ void loop () {
   delay (1000);
 }
 
-void initDevices (void) {
+void initDevices (int currentCallNumber) {
    Serial.begin (9600);
 }
 
@@ -202,10 +203,15 @@ int fColorDemo10sec (void) {
   
   Serial.println ("Mode: fDemo1");
   
-  /* */
+  /* /
   if (mode->modeJustChanged()) {
       millisAtStart = millis ();
+  }*/
+  
+  if (currentCallNumber == 0) {
+      millisAtStart = millis ();
   }
+  
   unsigned long deltaT = millis () - millisAtStart;
   int timeStep = 300;
   int direction = 1;
@@ -222,4 +228,26 @@ int fColorDemo10sec (void) {
       }
   }
   return 0;
+}
+
+//Input a value 0 to 384 to get a color value.
+//The colours are a transition r - g - b - back to r
+void Wheel (uint16_t WheelPos, byte &r, byte &g, byte &b) {
+  switch(WheelPos / 128) {
+    case 0:
+      r = 127 - WheelPos % 128; // red down
+      g = WheelPos % 128;       // green up
+      b = 0;                    // blue off
+      break;
+    case 1:
+      g = 127 - WheelPos % 128; // green down
+      b = WheelPos % 128;       // blue up
+      r = 0;                    // red off
+      break;
+    case 2:
+      b = 127 - WheelPos % 128; // blue down
+      r = WheelPos % 128;       // red up
+      g = 0;                    // green off
+      break;
+  }
 }
