@@ -35,7 +35,7 @@ class ModeChanger {
     int prevMode (void);
     int applyMode (int newMode);
     int applyMode (fPtr newModeFunc);
-    int callCurrModeFunc (void);
+    int callCurrModeFunc (long param);
     bool modeJustChanged (void);
     bool loopThruModeFunc (int nSec=10, int numCycles=1, LoopDir direction = LoopDir::FORWARD);
     //bool loopThruModeFunc (int nSec=10, int numCycles=1, LoopDir direction = LoopDir::FORWARD, int startMode = 0);
@@ -95,9 +95,9 @@ bool ModeChanger::loopThruModeFunc (LoopDir direction, long numCycles) {return f
 //bool ModeChanger::loopThruModeFunc (int nSec, int numCycles, LoopDir direction, bool switchAtZero) {
 
 void ModeChanger::testOp () {
-  (*_funcArray[0])();
-  (*_funcArray[1])(); 
-  (*_funcArray[2])(); 
+  (*_funcArray[0])(1);
+  (*_funcArray[1])(1); 
+  (*_funcArray[2])(1); 
 }
 
 bool ModeChanger::modeJustChanged (void) {
@@ -158,7 +158,7 @@ int ModeChanger::applyMode (fPtr newModeFunc) {
     return _currMode; 
 }
 
-int ModeChanger::callCurrModeFunc (int param) {
+int ModeChanger::callCurrModeFunc (long param) {
     if (_currMode > -1) { // Negative stands for some error
         return (*_funcArray[_currMode]) (param);
     }
@@ -181,13 +181,13 @@ void setup () {
 void loop () {
   //mode->applyMode (f2);
   
-  mode->callCurrModeFunc();
+  mode->callCurrModeFunc(1);
 
   mode->nextMode();
   delay (1000);
 }
 
-void initDevices (int currentCallNumber) {
+void initDevices (void) {
    Serial.begin (9600);
 }
 
