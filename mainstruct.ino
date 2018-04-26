@@ -208,9 +208,9 @@ int fColorDemo10sec (long currentCallNumber) {
   }
   
   unsigned long deltaT = millis () - millisAtStart;
-  const int timeStep = 300;
-  const int direction = 1;
-  const int wavelen = 6;
+  constexpr int timeStep = 300;
+  constexpr int direction = 1;
+  constexpr int wavelen = 6;
 
   for (int led = 0; led < numLEDs; led++) {
       // =ОСТАТ(время/timeStep1-направление*диод; waveLen)<1
